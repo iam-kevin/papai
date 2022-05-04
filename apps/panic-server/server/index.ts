@@ -13,7 +13,7 @@ app.use(
 		hydratable: true,
 		viewsDirname: __dirname + "/../views",
 		bundlesDirname: __dirname + "/../build",
-		bundlesHost: "/build",
+		bundlesHost: "/../build",
 		bundlesPattern: "[name][extname]",
 		env: "development",
 	})
