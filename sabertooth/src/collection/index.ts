@@ -6,6 +6,7 @@ import { CollectionNode, DocumentNode, Store } from "./core";
 
 export * from "./methods";
 export * from "./observable";
+export * from "./types";
 
 /**
  * Gets the reference of the collection from the sotre
@@ -44,6 +45,12 @@ export function doc<D extends Document.Data>(
 	);
 }
 
+export type StoreInstance = {
+	coll: Collection.FnPair;
+	doc: Document.FnPair;
+	getCollections: () => Promise<Collection.Ref[]>;
+};
+
 /**
  * Collection
  *
@@ -53,16 +60,7 @@ export function doc<D extends Document.Data>(
  * @param collRefFn
  * @returns
  */
-export function store(
-	fns: {
-		coll: Collection.FnPair<string>;
-		doc: Document.FnPair<string>;
-	},
-	refFn: {
-		doc: (f: Document.Ref) => string;
-		coll: (f: Collection.Ref) => string;
-	}
-) {
+export function store(fns: StoreInstance) {
 	/**
 	 * Collection handler
 	 * @param action
@@ -72,17 +70,17 @@ export function store(
 	) => {
 		switch (action.type) {
 			case "add": {
-				return await fns.coll.add<A>(
-					refFn.coll(action.ref),
-					action.arguments
-				);
+				return await fns.coll.add<A>(action.ref, action.arguments);
 			}
 			case "get-docs": {
-				return await fns.coll.getDocs<A>(refFn.coll(action.ref));
+				return await fns.coll.getDocs<A>(
+					action.ref,
+					action.arguments.query
+				);
 			}
 			case "add-docs": {
 				return await fns.coll.addMultiple<A>(
-					refFn.coll(action.ref),
+					action.ref,
 					action.arguments
 				);
 			}
@@ -107,35 +105,28 @@ export function store(
 		switch (action.type) {
 			case "set": {
 				// action.arguments.data;
-				const d = await fns.doc.set<A>(
-					refFn.doc(action.ref),
-					action.arguments
-				);
+				const d = await fns.doc.set<A>(action.ref, action.arguments);
 				return d; // returns the state of the app on change
 			}
 			case "get": {
-				const out = await fns.doc.get<A>(refFn.doc(action.ref));
+				const out = await fns.doc.get<A>(action.ref);
 				return out;
 			}
 			case "update": {
-				return await fns.doc.update<A>(
-					refFn.doc(action.ref),
-					action.arguments
-				);
+				return await fns.doc.update<A>(action.ref, action.arguments);
 			}
 			case "delete": {
-				await fns.doc.delete(refFn.doc(action.ref));
-				return null;
+				await fns.doc.delete(action.ref);
 			}
 			default: {
 				throw {
 					code: "failed",
 					// @ts-ignore
-					message: `Unknown action object ${action.type}`,
+					message: `Unknown action object ${action}`,
 				};
 			}
 		}
 	};
 
-	return new Store(collectionHandler, documentHandler);
+	return new Store(collectionHandler, documentHandler, fns.getCollections);
 }

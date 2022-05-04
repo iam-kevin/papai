@@ -5,6 +5,7 @@ import type {
 } from "./observable";
 import { Document, Collection } from "./types";
 
+type GetCollections = () => Promise<Collection.Ref[]>;
 /**
  * Store
  */
@@ -15,12 +16,19 @@ export class Store {
 	public performCollectionAction: Collection.ActionHandler;
 	public performDocumentAction: Document.ActionHandler;
 
+	public collections: () => Promise<Set<Collection.Ref>>;
+
 	constructor(
 		collHandler: Collection.ActionHandler,
-		docHandler: Document.ActionHandler
+		docHandler: Document.ActionHandler,
+		getCollections: GetCollections
 	) {
 		this.obsColl = new Subject<CollectionObservedAction>();
 		this.obsDoc = new Subject<DocumentObservedAction<any>>();
+
+		this.collections = async () => {
+			return new Set<Collection.Ref>(await getCollections());
+		};
 
 		this.performDocumentAction = async <A extends Document.Data>(
 			action: Document.Action<A>

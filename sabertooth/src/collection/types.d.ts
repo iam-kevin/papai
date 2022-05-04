@@ -21,13 +21,16 @@ export declare namespace Collection {
 		action: Collection.Action<A>
 	) => Promise<string | A[] | string[]>;
 
-	type FnPair<Ref> = {
+	type FnPair = {
 		add: <D extends Document.Data>(ref: Ref, data: D) => Promise<string>;
 		addMultiple: <D extends Document.Data>(
 			ref: Ref,
 			data: D[]
 		) => Promise<string[]>;
-		getDocs: <D extends Document.Data>(ref: Ref) => Promise<D[]>;
+		getDocs: <D extends Document.Data>(
+			ref: Ref,
+			query: DocumentQuery
+		) => Promise<D[]>;
 	};
 }
 
@@ -58,13 +61,13 @@ export declare namespace Document {
 		action: Document.Action<A>
 	) => Promise<A | void>;
 
-	type FnPair<Ref> = {
+	type FnPair = {
 		set: <D extends Document.Data>(ref: Ref, data: D) => Promise<D>;
 		update: <D extends Document.Data>(
 			ref: Ref,
 			data: Partial<D>
 		) => Promise<D>;
-		get: <D extends Document.Data>(ref: Ref) => Promise<D>;
-		delete: <D extends Document.Data>(ref: Ref) => Promise<void>;
+		get: <D extends Document.Data>(ref: Ref) => Promise<D | null>;
+		delete: (ref: Ref) => Promise<void>;
 	};
 }
