@@ -193,7 +193,7 @@ export default function ItemStorage(
 					ref.collectionId
 				);
 
-				const refs = await Helper.get<string[]>(
+				const refs = await Helper.get<string[] | null>(
 					config.store,
 					config.getCollRef(ref),
 					null
@@ -219,10 +219,17 @@ export default function ItemStorage(
 
 				// add logic stuff here
 
-				return docRefDataPairs.map(([_docRef, dataStr], ix) => {
-					//..
-					return [docRefs[ix], JSON.parse(dataStr) as D];
-				});
+				return docRefDataPairs
+					.map(([_docRef, dataStr], ix) => {
+						//..
+						return [
+							docRefs[ix],
+							dataStr !== null
+								? (JSON.parse(dataStr) as D)
+								: null,
+						];
+					})
+					.filter((d) => d[1] !== null) as [string, D][];
 			},
 
 			// documents
@@ -250,14 +257,17 @@ export default function ItemStorage(
 			},
 		},
 		doc: {
-			get: async <D extends Document.Data>(ref) => {
+			get: async <D extends Document.Data>(ref: Document.Ref) => {
 				return await Helper.get<D | null>(
 					config.store,
 					config.getDocRef(ref),
 					null
 				);
 			},
-			set: async <D extends Document.Data>(ref, data: D) => {
+			set: async <D extends Document.Data>(
+				ref: Document.Ref,
+				data: D
+			) => {
 				const d = await Helper.get<D | null>(
 					config.store,
 					config.getDocRef(ref),
@@ -274,7 +284,10 @@ export default function ItemStorage(
 				await Helper.set(config.store, config.getDocRef(ref), data);
 				return data;
 			},
-			update: async <D extends Document.Data>(ref, data: Partial<D>) => {
+			update: async <D extends Document.Data>(
+				ref: Document.Ref,
+				data: Partial<D>
+			) => {
 				const prevData = await Helper.get<D | null>(
 					config.store,
 					config.getDocRef(ref),

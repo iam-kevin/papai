@@ -22,7 +22,10 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 					);
 				}
 
-				const collMap = map.get(ref.collectionId);
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 				const documentId = generateId();
 
 				// Add new record
@@ -40,7 +43,10 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 				}
 
 				// get collection
-				const collMap = map.get(ref.collectionId);
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 
 				return data.map((d) => {
 					const docId = generateId();
@@ -71,7 +77,10 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 						message: `Missing collection ${ref.collectionId}`,
 					};
 				}
-				const collMap = map.get(ref.collectionId);
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 
 				// Get documents
 				return new Set(collMap.keys());
@@ -79,32 +88,32 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 		},
 		doc: {
 			set: async (ref, data) => {
-				if (!map.has(ref.collectionId)) {
+				const collMap = map.get(ref.collectionId);
+
+				if (collMap === undefined) {
 					throw {
 						code: "missing",
 						message: `Missing collection ${ref.collectionId}`,
 					};
 				}
-
-				const collMap = map.get(ref.collectionId);
 
 				//
 				collMap.set(ref.documentId, data);
 
 				return data;
 			},
-			get: async <D extends Document.Data>(ref) => {
-				if (!map.has(ref.collectionId)) {
+			get: async <D extends Document.Data>(ref: Document.Ref) => {
+				const collMap = map.get(ref.collectionId);
+
+				if (collMap === undefined) {
 					throw {
 						code: "missing",
 						message: `Missing collection ${ref.collectionId}`,
 					};
 				}
 
-				const collMap = map.get(ref.collectionId);
-
 				//
-				return (collMap.get(ref.documentId) as D) ?? null;
+				return (collMap.get(ref.documentId) ?? null) as D | null;
 			},
 			update: async <D extends Document.Data>(
 				ref: Document.Ref,
@@ -117,7 +126,7 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 					};
 				}
 
-				const collMap = map.get(ref.collectionId);
+				const collMap = map.get(ref.collectionId) as Map<DocumentId, D>;
 
 				if (!collMap.has(ref.documentId)) {
 					throw {
@@ -126,7 +135,7 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 					};
 				}
 
-				const prev = collMap.get(ref.documentId);
+				const prev = collMap.get(ref.documentId) as D;
 				const newData = { ...prev, ...partialData } as D;
 
 				collMap.set(ref.documentId, newData);
@@ -140,7 +149,10 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 					};
 				}
 
-				const collMap = map.get(ref.collectionId);
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 
 				if (!collMap.has(ref.documentId)) {
 					throw {
@@ -149,6 +161,7 @@ export default function KeyValueMap(generateId: () => string): StoreInstance {
 					};
 				}
 
+				// delete document
 				collMap.delete(ref.documentId);
 			},
 		},
