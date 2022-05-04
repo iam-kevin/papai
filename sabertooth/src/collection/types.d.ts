@@ -15,12 +15,16 @@ export declare namespace Collection {
 	type Action<D extends Document.Data> =
 		| ActionConfig<"add", Ref, D>
 		| ActionConfig<"add-docs", Ref, D[]>
-		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>;
+		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>
+		| ActionConfig<"docs", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
 		action: Collection.Action<A>
-	) => Promise<string | A[] | string[]>;
+	) => Promise<string | [string, A][] | string[] | Set<string>>;
 
+	/**
+	 * Output's for this must be serializable
+	 */
 	type FnPair = {
 		add: <D extends Document.Data>(ref: Ref, data: D) => Promise<string>;
 		addMultiple: <D extends Document.Data>(
@@ -30,7 +34,8 @@ export declare namespace Collection {
 		getDocs: <D extends Document.Data>(
 			ref: Ref,
 			query: DocumentQuery
-		) => Promise<D[]>;
+		) => Promise<Array<[string, D]>>;
+		docs: (ref: Ref) => Promise<Set<string>>;
 	};
 }
 

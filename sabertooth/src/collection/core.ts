@@ -5,7 +5,7 @@ import type {
 } from "./observable";
 import { Document, Collection } from "./types";
 
-type GetCollections = () => Promise<Collection.Ref[]>;
+export type GetCollections = () => Promise<Set<Collection.Ref>>;
 /**
  * Store
  */
@@ -27,7 +27,7 @@ export class Store {
 		this.obsDoc = new Subject<DocumentObservedAction<any>>();
 
 		this.collections = async () => {
-			return new Set<Collection.Ref>(await getCollections());
+			return await getCollections();
 		};
 
 		this.performDocumentAction = async <A extends Document.Data>(
@@ -147,7 +147,7 @@ export class Store {
 				return documentIds;
 			}
 
-			return (await collHandler<A>(action)) as A[];
+			return (await collHandler<A>(action)) as [string, A][];
 		};
 	}
 

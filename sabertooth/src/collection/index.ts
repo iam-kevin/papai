@@ -2,7 +2,7 @@
  * Implementation of a collection store
  */
 import type { Collection, Document } from "./types";
-import { CollectionNode, DocumentNode, Store } from "./core";
+import { CollectionNode, DocumentNode, GetCollections, Store } from "./core";
 
 export * from "./methods";
 export * from "./observable";
@@ -48,7 +48,7 @@ export function doc<D extends Document.Data>(
 export type StoreInstance = {
 	coll: Collection.FnPair;
 	doc: Document.FnPair;
-	getCollections: () => Promise<Collection.Ref[]>;
+	getCollections: GetCollections;
 };
 
 /**
@@ -83,6 +83,9 @@ export function store(fns: StoreInstance) {
 					action.ref,
 					action.arguments
 				);
+			}
+			case "docs": {
+				return await fns.coll.docs(action.ref);
 			}
 			default: {
 				throw {

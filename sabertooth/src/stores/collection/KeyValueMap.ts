@@ -1,4 +1,4 @@
-import { StoreInstance, Document } from "../../collection";
+import { StoreInstance, Document, Collection } from "../../collection";
 
 /**
  * Represent storage for key value pair
@@ -7,7 +7,7 @@ import { StoreInstance, Document } from "../../collection";
 type DocumentId = string;
 type CollectionId = string;
 
-export function KeyValueMap(generateId: () => string): StoreInstance {
+export default function KeyValueMap(generateId: () => string): StoreInstance {
 	// entire map the collections
 	const map = new Map<CollectionId, Map<DocumentId, Document.Data>>();
 
@@ -51,17 +51,30 @@ export function KeyValueMap(generateId: () => string): StoreInstance {
 					return docId;
 				});
 			},
-			getDocs: async <D extends Document.Data>(ref, query) => {
+			getDocs: async <D extends Document.Data>(
+				ref: Collection.Ref,
+				query: Collection.DocumentQuery
+			) => {
 				// Initiate
 				if (!map.has(ref.collectionId)) {
 					map.set(ref.collectionId, new Map<DocumentId, D>());
-
 					return [];
 				}
 
+				const collMap = map.get(ref.collectionId) as Map<DocumentId, D>;
+				return Array.from(new Set(collMap.entries()));
+			},
+			docs: async (ref) => {
+				if (!map.has(ref.collectionId)) {
+					throw {
+						code: "missing",
+						message: `Missing collection ${ref.collectionId}`,
+					};
+				}
 				const collMap = map.get(ref.collectionId);
 
-				return Array.from(collMap.values()) as D[];
+				// Get documents
+				return new Set(collMap.keys());
 			},
 		},
 		doc: {
@@ -143,7 +156,9 @@ export function KeyValueMap(generateId: () => string): StoreInstance {
 		 * Get the list of all collections
 		 */
 		getCollections: async () => {
-			return Array.from(map.keys()).map((ref) => ({ collectionId: ref }));
+			return new Set(
+				Array.from(map.keys()).map((ref) => ({ collectionId: ref }))
+			);
 		},
 	};
 }
