@@ -100,7 +100,7 @@ const setCollection = async (
  * @param config
  * @param generateId
  */
-export default function ItemStorage(
+export default function ItemStorageCollection(
 	config: {
 		nameReference: string;
 		store: AsyncItemStorage;

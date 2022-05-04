@@ -1,11 +1,15 @@
 {
 	"name": "sabertooth",
 	"version": "1.0.0",
-	"description": "",
-	"main": "./lib/index.js",
+	"description": "JSON-modelled data",
+	"files": [
+		"collection",
+		"log",
+		"stores"
+	],
 	"scripts": {
 		"start": "ts-node src/index.ts",
-		"build": "rm -rf ./lib && tsc -p .",
+		"build": "rm -rf ./collection ./log ./stores && tsc -p .",
 		"dev": "ts-node-dev src/index.ts",
 		"test": "ts-jest"
 	},
@@ -23,5 +27,5 @@
 	},
 	"keywords": [],
 	"author": "",
-	"license": "Apache 2.0"
+	"license": "Apache-2.0"
 }

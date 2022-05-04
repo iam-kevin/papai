@@ -7,7 +7,9 @@ import { StoreInstance, Document, Collection } from "../../collection";
 type DocumentId = string;
 type CollectionId = string;
 
-export default function KeyValueMap(generateId: () => string): StoreInstance {
+export default function KeyValueMapCollection(
+	generateId: () => string
+): StoreInstance {
 	// entire map the collections
 	const map = new Map<CollectionId, Map<DocumentId, Document.Data>>();
 

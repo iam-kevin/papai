@@ -27,7 +27,7 @@ export type CollectionObservedAction = {
 export function onDocumentSnapshot<D extends Document.Data>(
 	doc: DocumentNode<D>,
 	action: DocumentObservedAction<D>["action"],
-	cb: (data) => void
+	cb: (data: any) => void
 ) {
 	// logic
 }
@@ -38,5 +38,5 @@ export function onDocumentSnapshot<D extends Document.Data>(
 export function onCollectionSnapshot<D extends Document.Data>(
 	col: CollectionNode<D>,
 	action: CollectionObservedAction["action"],
-	cb: (data) => void
+	cb: (data: any) => void
 ) {}

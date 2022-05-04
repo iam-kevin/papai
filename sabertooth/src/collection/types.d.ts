@@ -64,7 +64,7 @@ export declare namespace Document {
 
 	type ActionHandler = <A extends Document.Data>(
 		action: Document.Action<A>
-	) => Promise<A | void>;
+	) => Promise<A | null | void>;
 
 	type FnPair = {
 		set: <D extends Document.Data>(ref: Ref, data: D) => Promise<D>;

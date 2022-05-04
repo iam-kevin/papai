@@ -34,7 +34,7 @@ export class Store {
 			action: Document.Action<A>
 		) => {
 			if (action.type === "delete") {
-				await docHandler(action);
+				await docHandler<A>(action);
 
 				//
 				this.obsColl.next({
@@ -52,7 +52,7 @@ export class Store {
 			}
 
 			if (action.type === "set") {
-				const s = (await docHandler(action)) as A;
+				const s = (await docHandler<A>(action)) as A;
 
 				this.obsColl.next({
 					action: "updated",
@@ -70,7 +70,7 @@ export class Store {
 			}
 
 			if (action.type === "update") {
-				const p = (await docHandler(action)) as A;
+				const p = (await docHandler<A>(action)) as A;
 
 				this.obsColl.next({
 					action: "updated",
@@ -87,7 +87,7 @@ export class Store {
 				return p;
 			}
 
-			return await docHandler(action);
+			return await docHandler<A>(action);
 		};
 
 		this.performCollectionAction = async <A extends Document.Data>(
@@ -131,7 +131,7 @@ export class Store {
 					})),
 				});
 
-				documentIds.forEach((documentId) => {
+				documentIds.forEach((documentId, ix) => {
 					const docRef = {
 						collectionId: action.ref.collectionId,
 						documentId,
@@ -140,7 +140,7 @@ export class Store {
 					this.obsDoc.next({
 						ref: docRef,
 						action: "added",
-						state: action.arguments,
+						state: action.arguments[ix],
 					});
 				});
 
