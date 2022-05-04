@@ -103,10 +103,3 @@ dist
 .tern-port
 
 # Project output
-sabertooth/
-
-# inverted
-!sabertooth/src
-!sabertooth/package.json
-!sabertooth/tsconfig.json
-!sabertooth/yarn.lock

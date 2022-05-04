@@ -1,3 +1,5 @@
 build
 
 .express-svelte
+
+node_modules/
