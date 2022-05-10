@@ -81,7 +81,7 @@ export default function KeyValueMapCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query: Partial<Collection.DocumentQuery>
+				query: Collection.DocumentQuery
 			) => {
 				// Initiate
 				if (!map.has(ref.collectionId)) {

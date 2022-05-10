@@ -43,7 +43,7 @@ export function deleteDoc<D extends Document.Data>(doc: DocumentNode<D>) {
 
 export async function getDocs<D extends Document.Data>(
 	coll: CollectionNode<D>,
-	query: Partial<Collection.DocumentQuery> = {}
+	query: Collection.DocumentQuery = {}
 ) {
 	return (await coll.handle(
 		{
@@ -55,10 +55,10 @@ export async function getDocs<D extends Document.Data>(
 	)) as Array<[string, D]>;
 }
 
-export async function addDoc<
-	D extends Document.Data,
-	O extends Collection.Options
->(coll: CollectionNode<D>, data: D) {
+export async function addDoc<D extends Document.Data>(
+	coll: CollectionNode<D>,
+	data: D
+) {
 	return (await coll.handle(
 		{
 			type: "add",

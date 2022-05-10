@@ -5,17 +5,25 @@ type ActionConfig<T extends string, Ref, Arg> = {
 };
 
 type UnitQuery = {
-	[field: string]: UnitData | { $text?: string; $eq?: UnitData };
+	[field: string]: UnitData | { $text: string } | { $eq: UnitData };
 };
 
 export declare namespace Collection {
 	type Ref = { collectionId: string };
-	type DocumentQuery = UnitQuery & { $or: UnitQuery[] };
+
+	// update query logic
+	type DocumentQuery = {
+		$where?: Partial<UnitQuery & { $or: UnitQuery[]; $and: UnitQuery[] }>;
+		$order?: {
+			order?: "asc" | "desc";
+			key: string;
+		};
+	};
 
 	type Action<D extends Document.Data> =
 		| ActionConfig<"add", Ref, D>
 		| ActionConfig<"add-docs", Ref, D[]>
-		| ActionConfig<"get-docs", Ref, { query: Partial<DocumentQuery> }>
+		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>
 		| ActionConfig<"docs", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
@@ -43,7 +51,7 @@ export declare namespace Collection {
 		) => Promise<string[]>;
 		getDocs: <D extends Document.Data>(
 			ref: Ref,
-			query: Partial<DocumentQuery>,
+			query: DocumentQuery,
 			options: Options
 		) => Promise<Array<[string, D]>>;
 		docs: (ref: Ref, options: Options) => Promise<Set<string>>;

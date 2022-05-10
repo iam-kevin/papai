@@ -168,7 +168,7 @@ export default function ItemStorageCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query: Partial<Collection.DocumentQuery>
+				query: Collection.DocumentQuery
 			) => {
 				// init collection
 				setCollection(
