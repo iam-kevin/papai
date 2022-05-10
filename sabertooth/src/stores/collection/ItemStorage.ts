@@ -52,36 +52,6 @@ const Helper = {
 	},
 };
 
-// const setDocument = async <T>(
-// 	istore: AsyncItemStorage,
-// 	documentRef: string,
-// 	data?: T | undefined
-// ) => {
-// 	// write to the document
-// 	await istore.setItem(documentRef, JSON.stringify({ $data: data ?? null }));
-// };
-
-// const getDocument = async <T>(
-// 	istore: AsyncItemStorage,
-// 	documentRef: string
-// ) => {
-// 	const obj = await Helper.get<{ $data: T } | null>(
-// 		istore,
-// 		documentRef,
-// 		null
-// 	);
-// 	return obj?.$data ?? null;
-// };
-
-// const addDocumentIdToCollection = async (
-// 	istore: AsyncItemStorage,
-// 	collRef: string,
-// 	documentId: string
-// ) => {
-// 	const vals = await Helper.get<string[]>(istore, collRef, []);
-// 	Helper.set(istore, collRef, Array.from(new Set([...vals, documentId])));
-// };
-
 const setCollection = async (
 	store: AsyncItemStorage,
 	collRef: string,
@@ -93,6 +63,20 @@ const setCollection = async (
 		collRef,
 		Array.from(new Set([...refs, collectionId]))
 	);
+};
+
+type CollectionOptions = {
+	createIfMissing: boolean;
+};
+type DocumentOptions = {
+	createIfMissing: boolean;
+};
+
+const defaultCollectionOptions: CollectionOptions = {
+	createIfMissing: true,
+};
+const defaultDocumentOptions: DocumentOptions = {
+	createIfMissing: true,
 };
 
 /**
@@ -184,7 +168,7 @@ export default function ItemStorageCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query?: Collection.DocumentQuery
+				query: Partial<Collection.DocumentQuery>
 			) => {
 				// init collection
 				setCollection(
@@ -318,6 +302,14 @@ export default function ItemStorageCollection(
 			);
 
 			return new Set(refs.map((rf) => ({ collectionId: rf })));
+		},
+
+		options: {
+			collection: defaultCollectionOptions,
+			document: {
+				collection: defaultCollectionOptions,
+				document: defaultDocumentOptions,
+			},
 		},
 	};
 }

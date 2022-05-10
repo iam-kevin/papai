@@ -2,10 +2,10 @@
  * Logic for distributed stores
  */
 
-import { Document } from "../collection";
+import { collection, doc, Document, setDoc } from "../collection";
 import { Store } from "../collection/core";
 import { HybridLogicalClock } from "./clock";
-import { ClockedState, SSet } from "./state-based";
+import { ClockedState, latestState, SSet } from "./state-based";
 import { DistributedDataType } from "./types";
 
 /**
@@ -14,12 +14,25 @@ import { DistributedDataType } from "./types";
  */
 export function getDeltaCollection(store: Store) {}
 
-class SSBox {
+class TrackingBox {
+	append(docRef: string, state: DistributedDataType) {
+		throw new Error("Not Implemented");
+	}
+
+	latest(): IterableIterator<[string, DistributedDataType]> {
+		throw new Error("Not Implemented");
+	}
+}
+
+export class DeltaTrackingBox extends TrackingBox {}
+
+export class StateTrackingBox extends TrackingBox {
 	private _sset = new Map<string, SSet<DistributedDataType>>();
 	private _hlc: HybridLogicalClock;
 
-	constructor(hlc: HybridLogicalClock) {
-		this._hlc = hlc;
+	constructor(initialClock: HybridLogicalClock) {
+		super();
+		this._hlc = initialClock;
 	}
 
 	mapSet() {
@@ -47,25 +60,48 @@ class SSBox {
 		this._hlc = x;
 		return x;
 	}
+
+	latest() {
+		const n = new Map<string, DistributedDataType>();
+		for (let [id, set] of this.mapSet()) {
+			let out = latestState(set);
+			n.set(id, out.object);
+		}
+
+		return n.entries();
+	}
 }
 
 /**
  * Consolidation done by using `distributed/state-based` logic
  * @param store
  */
-export function configureForChangesCollectionStore(
+export function onTrackStoreChanges(
 	store: Store,
-	initialClock: HybridLogicalClock,
-	documentRefToStr: (dr: Document.Ref) => string
+	trackingBox: TrackingBox,
+	// hash key to identify associated state
+	documentRefToKeyStr: (dr: Document.Ref) => string
 ) {
-	// Initialize the state box
-	const sbox = new SSBox(initialClock);
-
-	return store.documentObservable.subscribe((s) => {
-		const documentRef = documentRefToStr(s.ref);
+	const subscription = store.documentObservable.subscribe((s) => {
+		const documentRef = documentRefToKeyStr(s.ref);
 		if (s.action === "added" || s.action === "changed") {
 			// state box
-			sbox.append(documentRef, s.state);
+			trackingBox.append(documentRef, s.state);
 		}
 	});
+
+	return subscription;
+}
+
+export async function updateChangesToStore(
+	store: Store,
+	updateStateTrackingBox: TrackingBox,
+	keyStrToDocumentRef: (str: string) => Document.Ref
+) {
+	for (let [id, data] of updateStateTrackingBox.latest()) {
+		const { collectionId, documentId } = keyStrToDocumentRef(id);
+
+		// THINK: Maybe it's time for a multi-set (or `setDocs`)
+		await setDoc(doc(collection(store, collectionId), documentId), data);
+	}
 }
