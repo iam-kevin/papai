@@ -87,7 +87,7 @@ export class HybridLogicalClock {
 		return this._inc;
 	}
 
-	__ge__(other: HybridLogicalClock) {
+	isGreaterThan(other: HybridLogicalClock) {
 		if (this.ts >= other.ts) {
 			if (this.ts === other.ts) {
 				return this.inc > other.inc;

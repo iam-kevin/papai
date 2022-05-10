@@ -1,5 +1,9 @@
 
-# inverted
+# Build folders
 stores/
 collection/
 log/
+distributed/
+
+# Un-ignores
+!src/**

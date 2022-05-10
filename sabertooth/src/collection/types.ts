@@ -15,27 +15,41 @@ export declare namespace Collection {
 	type Action<D extends Document.Data> =
 		| ActionConfig<"add", Ref, D>
 		| ActionConfig<"add-docs", Ref, D[]>
-		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>
+		| ActionConfig<"get-docs", Ref, { query: Partial<DocumentQuery> }>
 		| ActionConfig<"docs", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
-		action: Collection.Action<A>
+		action: Collection.Action<A>,
+		collectionOptions: Options
 	) => Promise<string | [string, A][] | string[] | Set<string>>;
+
+	type Options = {
+		createIfMissing: boolean;
+	};
 
 	/**
 	 * Output's for this must be serializable
 	 */
 	type FnPair = {
-		add: <D extends Document.Data>(ref: Ref, data: D) => Promise<string>;
+		add: <D extends Document.Data>(
+			ref: Ref,
+			data: D,
+			options: Options
+		) => Promise<string>;
 		addMultiple: <D extends Document.Data>(
 			ref: Ref,
-			data: D[]
+			data: D[],
+			options: Options
 		) => Promise<string[]>;
 		getDocs: <D extends Document.Data>(
 			ref: Ref,
-			query: DocumentQuery
+			query: Partial<DocumentQuery>,
+			options: Options
 		) => Promise<Array<[string, D]>>;
-		docs: (ref: Ref) => Promise<Set<string>>;
+		docs: (ref: Ref, options: Options) => Promise<Set<string>>;
+		// // Ideally this is only fires when with `addDoc` or `addDocs`;
+		// // then again, that's an extra check step
+		// create?: (ref: Ref) => Promise<void>;
 	};
 }
 
@@ -63,16 +77,35 @@ export declare namespace Document {
 		| ActionConfig<"delete", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
-		action: Document.Action<A>
+		action: Document.Action<A>,
+		documentOptions: Options
 	) => Promise<A | null | void>;
 
+	type Options = {
+		collection: Collection.Options;
+		document: {
+			createIfMissing: boolean;
+		};
+	};
+
 	type FnPair = {
-		set: <D extends Document.Data>(ref: Ref, data: D) => Promise<D>;
+		// // Ideally this is only fires when with `addDocs` or `setDocs`;
+		// // then again, that's an extra check step
+		// create?: (ref: Ref) => Promise<void>;
+		set: <D extends Document.Data>(
+			ref: Ref,
+			data: D,
+			options: Options
+		) => Promise<D>;
 		update: <D extends Document.Data>(
 			ref: Ref,
-			data: Partial<D>
+			data: Partial<D>,
+			options: Options
 		) => Promise<D>;
-		get: <D extends Document.Data>(ref: Ref) => Promise<D | null>;
-		delete: (ref: Ref) => Promise<void>;
+		get: <D extends Document.Data>(
+			ref: Ref,
+			options: Options
+		) => Promise<D | null>;
+		delete: (ref: Ref, options: Options) => Promise<void>;
 	};
 }

@@ -9,20 +9,22 @@
 	],
 	"scripts": {
 		"start": "ts-node src/index.ts",
-		"build": "rm -rf ./collection ./log ./stores && tsc -p .",
+		"build": "rm -rf ./collection ./log ./stores ./distributed && tsc -p .",
 		"dev": "ts-node-dev src/index.ts",
 		"test": "ts-jest"
 	},
 	"devDependencies": {
 		"@types/jest": "^27.0.3",
+		"@types/lodash.isequal": "^4.5.6",
 		"@types/node": "^16.11.9",
 		"jest": "^27.3.1",
 		"ts-node": "^10.4.0",
 		"ts-node-dev": "^1.1.8",
-		"typescript": "^4.5.2"
+		"typescript": "^4.5.2",
+		"nanoid": "^3.3.4"
 	},
 	"dependencies": {
-		"nanoid": "^3.3.4",
+		"lodash.isequal": "^4.5.0",
 		"rxjs": "^7.5.4"
 	},
 	"keywords": [],

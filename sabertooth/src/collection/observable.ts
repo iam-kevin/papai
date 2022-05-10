@@ -12,10 +12,9 @@ export type DocumentObservedAction<D extends Document.Data = Document.Data> = {
 export type CollectionObservedAction = {
 	// ref: Collection.Ref;
 } & (
-	| { action: "updated"; document: Document.Ref }
-	| { action: "added-multiple"; documents: Document.Ref[] }
-	| { action: "added"; document: Document.Ref }
-	| { action: "removed"; document: Document.Ref }
+	| { action: "updated"; documents: Document.Ref[] }
+	| { action: "added"; documents: Document.Ref[] }
+	| { action: "removed"; documents: Document.Ref[] }
 );
 
 /**
@@ -29,6 +28,9 @@ export function onDocumentSnapshot<D extends Document.Data>(
 	action: DocumentObservedAction<D>["action"],
 	cb: (data: any) => void
 ) {
+	return doc.observable.subscribe((o) => {
+		if (o.action === action) cb(o);
+	});
 	// logic
 }
 
@@ -39,4 +41,11 @@ export function onCollectionSnapshot<D extends Document.Data>(
 	col: CollectionNode<D>,
 	action: CollectionObservedAction["action"],
 	cb: (data: any) => void
-) {}
+) {
+	return col.observable.subscribe((s) => {
+		if (s.action === action) {
+			cb(s);
+			return;
+		}
+	});
+}

@@ -1,4 +1,4 @@
-import { Collection, StoreInstance } from "../../collection";
+import { Collection, StoreConstructor } from "../../collection";
 import { Document } from "../../collection";
 
 type KeyValuePair = [string, string | null];
@@ -108,7 +108,7 @@ export default function ItemStorageCollection(
 		getCollRef: (d: Collection.Ref) => string;
 	},
 	generateId: () => string
-): StoreInstance {
+): StoreConstructor {
 	// create collections map from name
 
 	return {
@@ -184,7 +184,7 @@ export default function ItemStorageCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query: Collection.DocumentQuery
+				query?: Collection.DocumentQuery
 			) => {
 				// init collection
 				setCollection(

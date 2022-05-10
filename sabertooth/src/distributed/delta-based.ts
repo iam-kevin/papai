@@ -3,57 +3,41 @@
  * `collection` based stores
  */
 
-import { nanoid } from "nanoid";
 import { HybridLogicalClock } from "./clock";
+import { DistributedDataType } from "./types";
+import _isEqual from "lodash.isequal";
 
-type DV = { [x: string]: any };
-class Delta<T extends DV> {
-	private _unit;
+type DV = DistributedDataType;
+export class Delta<T extends DV> {
+	private _units;
+	private _object;
 
 	constructor(state: Partial<T>) {
-		this._unit = new Set(
+		this._object = state;
+		this._units = new Set(
 			Object.entries(state).map((value) => {
-				return new Pair(value);
+				return new Unit(value);
 			})
 		);
 	}
 
-	get state() {
-		return this._unit.values();
+	isEqual(other: Delta<T>) {
+		return _isEqual(this.object, other.object);
+	}
+
+	get object() {
+		return this._object;
+	}
+
+	get units() {
+		return this._units.values();
 	}
 }
 
 /**
- * delta state to merge data with
+ * Smallest unit of data
  */
-class DeltaState<T> {
-	private _state: Partial<T>;
-	constructor(state: Partial<T>) {
-		this._state = state;
-	}
-
-	get state() {
-		return this._state;
-	}
-}
-
-/**
- * State that's sent across the network
- * @param action
- * @param state
- */
-function delta<T>(
-	state: Partial<T>,
-	hlc: HybridLogicalClock
-): ClockedDeltaState<T> {
-	return new ClockedDeltaState<T>(raw_delta(state), hlc);
-}
-
-function raw_delta<T extends DV>(state: Partial<T>): Delta<T> {
-	return new Delta(state);
-}
-
-class Pair<K, V> {
+export class Unit<K, V> {
 	private _key;
 	private _value;
 
@@ -62,12 +46,8 @@ class Pair<K, V> {
 		this._value = value;
 	}
 
-	equals(other: Pair<any, any>) {
-		return this.key === other.key && this.value === other.value;
-	}
-
-	hash() {
-		return [this.key, this.value];
+	isEqual(other: Unit<any, any>) {
+		return this.key === other.key && _isEqual(this.value, other.value);
 	}
 
 	get key() {
@@ -78,17 +58,29 @@ class Pair<K, V> {
 	}
 }
 
-class ClockedPair<K, V> {
+/**
+ * Versioned / Clocked
+ * data unit
+ */
+export class ClockedUnit<K, V> {
 	private _pair;
 	private _clock;
 
-	constructor(pair: Pair<K, V>, hlc: HybridLogicalClock) {
+	constructor(pair: Unit<K, V>, hlc: HybridLogicalClock) {
 		this._clock = hlc;
 		this._pair = pair;
 	}
 
 	hash() {
-		return [...this.pair.hash(), this.clock.toString()];
+		return JSON.stringify([
+			this.pair.key,
+			this.pair.key,
+			this.clock.toString(),
+		]);
+	}
+
+	valueOf() {
+		return this.hash();
 	}
 
 	get pair() {
@@ -108,55 +100,31 @@ class ClockedPair<K, V> {
 }
 
 /**
- * with clock
- */
-class ClockedDeltaState<T extends DV> {
-	private _delta;
-	private _clock;
-
-	constructor(delta: Delta<T>, hlc: HybridLogicalClock) {
-		this._delta = new Set(
-			Array.from(delta.state).map((s) => new ClockedPair(s, hlc.next()))
-		);
-		this._clock = hlc;
-	}
-
-	/**
-	 * Get the state
-	 */
-	get states() {
-		return this.delta.values();
-	}
-
-	/**
-	 * Get `DeltaState` object
-	 */
-	get delta() {
-		return this._delta;
-	}
-
-	/**
-	 * Clock that versions the state
-	 */
-	get clock() {
-		return this._clock;
-	}
-}
-
-/**
  * Set with delta mutations
  *
  * Close to this: https://core.ac.uk/download/pdf/154274608.pdf
  * and https://arxiv.org/abs/1803.02750
  *
  */
-class BSet<T extends DV, K extends keyof T = keyof T, V extends T[K] = T[K]> {
-	private _deltaSet: Set<ClockedPair<K, V>>;
+export class BSet<
+	T extends DV,
+	K extends keyof T = keyof T,
+	V extends T[K] = T[K]
+> {
+	private _deltaSet: Set<ClockedUnit<K, V>>;
 	private _refClock;
 
 	constructor(referenceClock: HybridLogicalClock) {
 		this._deltaSet = new Set();
 		this._refClock = referenceClock;
+	}
+
+	multiAdd(
+		val: IterableIterator<ClockedUnit<K, V>> | Array<ClockedUnit<K, V>>
+	) {
+		for (let s of val) {
+			this.add(new ClockedUnit(s.pair, this.incrementClock(s.clock)));
+		}
 	}
 
 	referenceClock() {
@@ -167,69 +135,59 @@ class BSet<T extends DV, K extends keyof T = keyof T, V extends T[K] = T[K]> {
 		return this._deltaSet.values();
 	}
 
-	/**
-	 * Check if the Set has the delta state
-	 */
-	// has(value: ClockedDeltaState<T>): boolean {
-	// 	const s = new Set(Array.from(this._deltaSet).map((d) => d.state));
-	// 	return s.has(value.state);
-	// }
-
-	has(value: ClockedPair<K, V>): boolean {
+	has(value: ClockedUnit<K, V>): boolean {
 		const s = new Set(Array.from(this._deltaSet).map((d) => d.pair));
 		return s.has(value.pair);
 	}
 
-	add(value: ClockedPair<K, V>): this {
+	add(value: ClockedUnit<K, V>): this {
 		if (!this.has(value)) {
 			// check if has key
 			// update here
-			if (this.referenceClock() > value.clock) {
-				this._add(
-					new ClockedPair(
+			if (this.referenceClock().isGreaterThan(value.clock)) {
+				return this._add(
+					new ClockedUnit(
 						value.pair,
 						this.incrementClock(value.clock)
 					)
 				);
 			} else {
-				this._add(new ClockedPair(value.pair, this.incrementClock()));
+				return this._add(
+					new ClockedUnit(value.pair, this.incrementClock())
+				);
 			}
 		}
 
 		return this;
 	}
 
-	private _add(value: ClockedPair<K, V>) {
+	private _add(value: ClockedUnit<K, V>) {
 		this._deltaSet.add(value);
+		return this;
 	}
-	// add(value: ClockedDeltaState<T>): this {
-	// 	// if state isn't contained in the set,
-	// 	if (!this.has(value)) {
-	// 		this.add(
-	// 			new ClockedDeltaState<T>(value.delta, this.incrementClock())
-	// 		);
-	// 	}
-
-	// 	return this;
-	// }
 
 	clear(): void {
 		this._deltaSet.clear();
 	}
 
-	delete(value: ClockedPair<K, V>): boolean {
+	delete(value: ClockedUnit<K, V>): boolean {
 		throw new Error("Not Implemented");
 	}
 
-	keys(): IterableIterator<ClockedPair<K, V>> {
+	keys(): IterableIterator<ClockedUnit<K, V>> {
 		throw new Error("Not Implemented");
 	}
+
+	get size() {
+		return this._deltaSet.size;
+	}
+
 	// implementing needed methods
 	forEach(
 		callbackfn: (
-			value: ClockedPair<K, V>,
-			value2: ClockedPair<K, V>,
-			set: Set<ClockedPair<K, V>>
+			value: ClockedUnit<K, V>,
+			value2: ClockedUnit<K, V>,
+			set: Set<ClockedUnit<K, V>>
 		) => void,
 		thisArg?: any
 	): void {
@@ -248,31 +206,6 @@ class BSet<T extends DV, K extends keyof T = keyof T, V extends T[K] = T[K]> {
 	}
 }
 
-const initClock = new HybridLogicalClock(nanoid(10));
-
-type Value = {
-	name: string;
-	age: number;
-};
-const dset = new BSet(initClock);
-
-function adelta<T>(state: Partial<T>) {
-	return delta<T>(state, initClock.next());
-}
-
-function appendToSet<V>(data: V) {
-	const cp = adelta(data);
-	for (let c of cp.states) {
-		dset.add(c);
-	}
-}
-
-// add the values to the set
-appendToSet({ age: 98 });
-appendToSet({ name: "Kevin" });
-appendToSet({ age: 101 });
-appendToSet({ name: "James" });
-
 // console.log(Array.from(dset.values()).map((d) => d.pair.hash()));
 
 /**
@@ -280,7 +213,7 @@ appendToSet({ name: "James" });
  * @param bset
  * @returns
  */
-function syncronize<T extends DV>(bset: BSet<T>) {
+export function synchronize<T extends DV>(bset: BSet<T>) {
 	type K = keyof T;
 	type V = T[K];
 
@@ -305,6 +238,3 @@ function syncronize<T extends DV>(bset: BSet<T>) {
 	return bs;
 	// ...
 }
-
-const x = syncronize(dset);
-console.log(x);

@@ -1,4 +1,4 @@
-import { StoreInstance, Document, Collection } from "../../collection";
+import { StoreConstructor, Document, Collection } from "../../collection";
 
 /**
  * Represent storage for key value pair
@@ -7,13 +7,33 @@ import { StoreInstance, Document, Collection } from "../../collection";
 type DocumentId = string;
 type CollectionId = string;
 
+type CollectionOptions = {
+	createIfMissing: boolean;
+};
+type DocumentOptions = {
+	createIfMissing: boolean;
+};
+
+const defaultCollectionOptions: CollectionOptions = {
+	createIfMissing: true,
+};
+const defaultDocumentOptions: DocumentOptions = {
+	createIfMissing: true,
+};
+
 export default function KeyValueMapCollection(
 	generateId: () => string
-): StoreInstance {
+): StoreConstructor {
 	// entire map the collections
 	const map = new Map<CollectionId, Map<DocumentId, Document.Data>>();
 
 	return {
+		// TODO: update to this
+		// coll: (options) => {}
+		// docs: (options) => {}
+		// OR
+		// coll { add(ref, data, collOpts) => {}}
+		// docs { set(ref, data, opts: { collOpts, docOpts }) => {}}
 		coll: {
 			add: async (ref, data) => {
 				// Initiate
@@ -61,7 +81,7 @@ export default function KeyValueMapCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query: Collection.DocumentQuery
+				query: Partial<Collection.DocumentQuery>
 			) => {
 				// Initiate
 				if (!map.has(ref.collectionId)) {
@@ -74,11 +94,13 @@ export default function KeyValueMapCollection(
 			},
 			docs: async (ref) => {
 				if (!map.has(ref.collectionId)) {
-					throw {
-						code: "missing",
-						message: `Missing collection ${ref.collectionId}`,
-					};
+					map.set(ref.collectionId, new Map());
+					// throw {
+					// 	code: "missing",
+					// 	message: `Missing collection ${ref.collectionId}`,
+					// };
 				}
+
 				const collMap = map.get(ref.collectionId) as Map<
 					DocumentId,
 					Document.Data
@@ -90,14 +112,17 @@ export default function KeyValueMapCollection(
 		},
 		doc: {
 			set: async (ref, data) => {
-				const collMap = map.get(ref.collectionId);
-
-				if (collMap === undefined) {
-					throw {
-						code: "missing",
-						message: `Missing collection ${ref.collectionId}`,
-					};
+				if (!map.has(ref.collectionId)) {
+					map.set(ref.collectionId, new Map());
+					// throw {
+					// 	code: "missing",
+					// 	message: `Missing collection ${ref.collectionId}`,
+					// };
 				}
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 
 				//
 				collMap.set(ref.documentId, data);
@@ -105,14 +130,26 @@ export default function KeyValueMapCollection(
 				return data;
 			},
 			get: async <D extends Document.Data>(ref: Document.Ref) => {
-				const collMap = map.get(ref.collectionId);
+				// const collMap = map.get(ref.collectionId);
 
-				if (collMap === undefined) {
-					throw {
-						code: "missing",
-						message: `Missing collection ${ref.collectionId}`,
-					};
+				// if (collMap === undefined) {
+				// 	throw {
+				// 		code: "missing",
+				// 		message: `Missing collection ${ref.collectionId}`,
+				// 	};
+				// }
+
+				if (!map.has(ref.collectionId)) {
+					map.set(ref.collectionId, new Map());
+					// throw {
+					// 	code: "missing",
+					// 	message: `Missing collection ${ref.collectionId}`,
+					// };
 				}
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
 
 				//
 				return (collMap.get(ref.documentId) ?? null) as D | null;
@@ -174,6 +211,13 @@ export default function KeyValueMapCollection(
 			return new Set(
 				Array.from(map.keys()).map((ref) => ({ collectionId: ref }))
 			);
+		},
+		options: {
+			collection: defaultCollectionOptions,
+			document: {
+				collection: defaultCollectionOptions,
+				document: defaultDocumentOptions,
+			},
 		},
 	};
 }
