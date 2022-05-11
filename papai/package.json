@@ -5,7 +5,8 @@
 	"files": [
 		"collection",
 		"log",
-		"stores"
+		"stores",
+		"distributed"
 	],
 	"scripts": {
 		"start": "ts-node src/index.ts",
