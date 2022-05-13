@@ -217,17 +217,42 @@ export default function ItemStorageCollection(
 			},
 
 			setDocs: async (ref, data, options) => {
-				const indata = data.map(([documentId, data]) => {
+				setCollection(
+					config.store,
+					config.nameReference,
+					ref.collectionId
+				);
+
+				const refs = await Helper.get<string[]>(
+					config.store,
+					config.getCollRef(ref),
+					[]
+				);
+
+				const indataE = data.map(([documentId, data]) => {
 					const docRef = {
 						collectionId: ref.collectionId,
 						documentId,
 					};
 
-					return [config.getDocRef(docRef), JSON.stringify(data)] as [
-						string,
-						string
+					return [
+						documentId,
+						[config.getDocRef(docRef), JSON.stringify(data)] as [
+							string,
+							string
+						],
 					];
 				});
+
+				const ikeys = indataE.map((s) => s[0]);
+				const indata = indataE.map((s) => s[1]) as [string, string][];
+
+				// add documents
+				await Helper.set(
+					config.store,
+					config.getCollRef(ref),
+					Array.from(new Set([...refs, ...ikeys]))
+				);
 
 				await config.store.multiSet(indata);
 			},
