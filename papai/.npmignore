@@ -1,6 +1,9 @@
-./src
+src
 __tests__
 node_modules
 
 tsconfig.json
 *error.log
+yarn.lock
+
+.gitignore

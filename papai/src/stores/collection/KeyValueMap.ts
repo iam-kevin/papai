@@ -35,7 +35,7 @@ export default function KeyValueMapCollection(
 		// coll { add(ref, data, collOpts) => {}}
 		// docs { set(ref, data, opts: { collOpts, docOpts }) => {}}
 		coll: {
-			add: async (ref, data) => {
+			add: async (ref, data, options) => {
 				// Initiate
 				if (!map.has(ref.collectionId)) {
 					map.set(
@@ -56,7 +56,7 @@ export default function KeyValueMapCollection(
 				// Output the Id for the new record
 				return documentId;
 			},
-			addMultiple: async (ref, data) => {
+			addMultiple: async (ref, data, options) => {
 				if (!map.has(ref.collectionId)) {
 					map.set(
 						ref.collectionId,
@@ -81,7 +81,8 @@ export default function KeyValueMapCollection(
 			},
 			getDocs: async <D extends Document.Data>(
 				ref: Collection.Ref,
-				query: Collection.DocumentQuery
+				query: Collection.DocumentQuery,
+				options: Collection.Options
 			) => {
 				// Initiate
 				if (!map.has(ref.collectionId)) {
@@ -92,7 +93,26 @@ export default function KeyValueMapCollection(
 				const collMap = map.get(ref.collectionId) as Map<DocumentId, D>;
 				return Array.from(new Set(collMap.entries()));
 			},
-			docs: async (ref) => {
+			setDocs: async <D extends Document.Data>(
+				ref: Collection.Ref,
+				data: [string, D][],
+				options: Collection.Options
+			) => {
+				if (!map.has(ref.collectionId)) {
+					map.set(ref.collectionId, new Map<DocumentId, D>());
+				}
+
+				const collMap = map.get(ref.collectionId) as Map<DocumentId, D>;
+
+				// set documents
+				data.forEach(([documentId, data]) => {
+					// set up
+					collMap.set(documentId, data);
+				});
+
+				return;
+			},
+			docs: async (ref, options) => {
 				if (!map.has(ref.collectionId)) {
 					map.set(ref.collectionId, new Map());
 					// throw {
@@ -111,7 +131,7 @@ export default function KeyValueMapCollection(
 			},
 		},
 		doc: {
-			set: async (ref, data) => {
+			set: async (ref, data, options) => {
 				if (!map.has(ref.collectionId)) {
 					map.set(ref.collectionId, new Map());
 					// throw {
@@ -129,7 +149,10 @@ export default function KeyValueMapCollection(
 
 				return data;
 			},
-			get: async <D extends Document.Data>(ref: Document.Ref) => {
+			get: async <D extends Document.Data>(
+				ref: Document.Ref,
+				options: Document.Options
+			) => {
 				// const collMap = map.get(ref.collectionId);
 
 				// if (collMap === undefined) {
@@ -156,7 +179,8 @@ export default function KeyValueMapCollection(
 			},
 			update: async <D extends Document.Data>(
 				ref: Document.Ref,
-				partialData: Partial<D>
+				partialData: Partial<D>,
+				options: Document.Options
 			) => {
 				if (!map.has(ref.collectionId)) {
 					throw {
@@ -180,7 +204,7 @@ export default function KeyValueMapCollection(
 				collMap.set(ref.documentId, newData);
 				return newData;
 			},
-			delete: async (ref) => {
+			delete: async (ref, options) => {
 				if (!map.has(ref.collectionId)) {
 					throw {
 						code: "missing",

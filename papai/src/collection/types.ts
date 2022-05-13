@@ -23,13 +23,14 @@ export declare namespace Collection {
 	type Action<D extends Document.Data> =
 		| ActionConfig<"add", Ref, D>
 		| ActionConfig<"add-docs", Ref, D[]>
+		| ActionConfig<"set-docs", Ref, [string, D][]>
 		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>
 		| ActionConfig<"docs", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
 		action: Collection.Action<A>,
 		collectionOptions: Options
-	) => Promise<string | [string, A][] | string[] | Set<string>>;
+	) => Promise<string | void | [string, A][] | string[] | Set<string>>;
 
 	type Options = {
 		createIfMissing: boolean;
@@ -54,6 +55,11 @@ export declare namespace Collection {
 			query: DocumentQuery,
 			options: Options
 		) => Promise<Array<[string, D]>>;
+		setDocs: <D extends Document.Data>(
+			ref: Ref,
+			data: [string, D][],
+			options: Options
+		) => Promise<void>;
 		docs: (ref: Ref, options: Options) => Promise<Set<string>>;
 		// // Ideally this is only fires when with `addDoc` or `addDocs`;
 		// // then again, that's an extra check step

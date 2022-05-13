@@ -216,6 +216,22 @@ export default function ItemStorageCollection(
 					.filter((d) => d[1] !== null) as [string, D][];
 			},
 
+			setDocs: async (ref, data, options) => {
+				const indata = data.map(([documentId, data]) => {
+					const docRef = {
+						collectionId: ref.collectionId,
+						documentId,
+					};
+
+					return [config.getDocRef(docRef), JSON.stringify(data)] as [
+						string,
+						string
+					];
+				});
+
+				await config.store.multiSet(indata);
+			},
+
 			// documents
 			docs: async (ref) => {
 				// init collection

@@ -55,6 +55,20 @@ export async function getDocs<D extends Document.Data>(
 	)) as Array<[string, D]>;
 }
 
+export async function setDocs<D extends Document.Data>(
+	coll: CollectionNode<D>,
+	data: [string, D][]
+) {
+	return (await coll.handle(
+		{
+			ref: coll.ref,
+			arguments: data,
+			type: "set-docs",
+		},
+		coll.options
+	)) as void;
+}
+
 export async function addDoc<D extends Document.Data>(
 	coll: CollectionNode<D>,
 	data: D

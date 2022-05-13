@@ -94,6 +94,13 @@ export function getStore(args: StoreConstructor) {
 					collectionOptions
 				);
 			}
+			case "set-docs": {
+				return await args.coll.setDocs<A>(
+					action.ref,
+					action.arguments,
+					collectionOptions
+				);
+			}
 			case "add-docs": {
 				return await args.coll.addMultiple<A>(
 					action.ref,
