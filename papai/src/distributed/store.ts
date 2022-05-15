@@ -15,11 +15,11 @@ import { DistributedDataType } from "./types";
 export function getDeltaCollection(store: Store) {}
 
 class TrackingBox {
-	append(_docRef: string, _state: DistributedDataType) {
+	append(key: string, ref: Document.Ref, _state: DistributedDataType) {
 		throw new Error("Not Implemented");
 	}
 
-	latest(): IterableIterator<[string, DistributedDataType]> {
+	latest(): IterableIterator<[Document.Ref, DistributedDataType]> {
 		throw new Error("Not Implemented");
 	}
 }
@@ -29,6 +29,7 @@ export class DeltaTrackingBox extends TrackingBox {}
 export class StateTrackingBox extends TrackingBox {
 	private _sset = new Map<string, SSet<DistributedDataType>>();
 	private _hlc: HybridLogicalClock;
+	private _mapKey = new Map<string, Document.Ref>();
 
 	constructor(initialClock: HybridLogicalClock) {
 		super();
@@ -41,15 +42,20 @@ export class StateTrackingBox extends TrackingBox {
 
 	/**
 	 * Add state changes to document box
-	 * @param docRef
+	 * @param docRefKey
 	 * @param state
 	 */
-	append(docRef: string, state: DistributedDataType) {
-		if (!this._sset.has(docRef)) {
-			this._sset.set(docRef, new SSet(this.nextClock()));
+	append(
+		docRefKey: string,
+		docRef: Document.Ref,
+		state: DistributedDataType
+	) {
+		if (!this._sset.has(docRefKey)) {
+			this._sset.set(docRefKey, new SSet(this.nextClock()));
+			this._mapKey.set(docRefKey, docRef);
 		}
 
-		const set = this._sset.get(docRef) as SSet<DistributedDataType>;
+		const set = this._sset.get(docRefKey) as SSet<DistributedDataType>;
 
 		// add new state
 		set.add(new ClockedState(state, this.nextClock()));
@@ -61,14 +67,22 @@ export class StateTrackingBox extends TrackingBox {
 		return x;
 	}
 
+	mapKey() {
+		return this._mapKey;
+	}
+
 	latest() {
-		const n = new Map<string, DistributedDataType>();
+		const n = new Set<[Document.Ref, DistributedDataType]>();
 		for (let [id, set] of this.mapSet()) {
 			let out = latestState(set);
-			n.set(id, out.object);
+			const idRef = this._mapKey.get(id);
+
+			if (idRef !== undefined) {
+				n.add([idRef, out.object]);
+			}
 		}
 
-		return n.entries();
+		return n.values();
 	}
 }
 
@@ -81,20 +95,16 @@ export function onTrackStoreAddUpdateChanges(
 	trackingBox: TrackingBox,
 	// hash key to identify associated state
 	documentRefToKeyStr: (dr: Document.Ref) => string,
-	callback: (
-		doc: Document.Ref,
-		documentRef: string,
-		state: DistributedDataType
-	) => void
+	callback: (doc: Document.Ref, state: DistributedDataType) => void
 ) {
 	const subscription = store.documentObservable.subscribe((s) => {
 		const documentRef = documentRefToKeyStr(s.ref);
 		if (s.action === "added" || s.action === "changed") {
 			// state box
-			trackingBox.append(documentRef, s.state);
+			trackingBox.append(documentRef, s.ref, s.state);
 
 			// fires callback after action
-			callback(s.ref, documentRef, s.state);
+			callback(s.ref, s.state);
 		}
 	});
 
@@ -103,12 +113,12 @@ export function onTrackStoreAddUpdateChanges(
 
 export async function updateChangesToStore(
 	store: Store,
-	updateStateTrackingBox: TrackingBox,
-	keyStrToDocumentRef: (str: string) => Document.Ref
+	updateStateTrackingBox: TrackingBox
 ) {
-	for (let [id, data] of updateStateTrackingBox.latest()) {
-		const { collectionId, documentId } = keyStrToDocumentRef(id);
-
+	for (let [
+		{ collectionId, documentId },
+		data,
+	] of updateStateTrackingBox.latest()) {
 		// THINK: Maybe it's time for a multi-set (or `setDocs`)
 		await setDoc(doc(collection(store, collectionId), documentId), data);
 	}
