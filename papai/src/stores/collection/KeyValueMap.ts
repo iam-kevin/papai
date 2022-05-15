@@ -114,7 +114,8 @@ export default function KeyValueMapCollection(
 			},
 			docs: async (ref, options) => {
 				if (!map.has(ref.collectionId)) {
-					map.set(ref.collectionId, new Map());
+					return new Set();
+					// map.set(ref.collectionId, new Map());
 					// throw {
 					// 	code: "missing",
 					// 	message: `Missing collection ${ref.collectionId}`,
@@ -206,10 +207,11 @@ export default function KeyValueMapCollection(
 			},
 			delete: async (ref, options) => {
 				if (!map.has(ref.collectionId)) {
-					throw {
-						code: "missing",
-						message: `Missing collection ${ref.collectionId}`,
-					};
+					return;
+					// throw {
+					// 	code: "missing",
+					// 	message: `Missing collection ${ref.collectionId}`,
+					// };
 				}
 
 				const collMap = map.get(ref.collectionId) as Map<
@@ -218,10 +220,11 @@ export default function KeyValueMapCollection(
 				>;
 
 				if (!collMap.has(ref.documentId)) {
-					throw {
-						code: "missing-document",
-						message: `Missing document ${ref.collectionId}`,
-					};
+					return;
+					// throw {
+					// 	code: "missing-document",
+					// 	message: `Missing document ${ref.collectionId}`,
+					// };
 				}
 
 				// delete document

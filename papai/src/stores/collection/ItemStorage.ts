@@ -274,15 +274,16 @@ export default function ItemStorageCollection(
 				const refs = await Helper.get<string[] | null>(
 					config.store,
 					config.getCollRef(ref),
-					null
+					[]
+					// null
 				);
 
-				if (refs === null) {
-					throw {
-						code: "missing",
-						message: `Collection ${ref.collectionId}`,
-					};
-				}
+				// if (refs === null) {
+				// 	throw {
+				// 		code: "missing",
+				// 		message: `Collection ${ref.collectionId}`,
+				// 	};
+				// }
 
 				return new Set(refs);
 			},
@@ -299,18 +300,18 @@ export default function ItemStorageCollection(
 				ref: Document.Ref,
 				data: D
 			) => {
-				const d = await Helper.get<D | null>(
-					config.store,
-					config.getDocRef(ref),
-					null
-				);
+				// const d = await Helper.get<D | null>(
+				// 	config.store,
+				// 	config.getDocRef(ref),
+				// 	null
+				// );
 
-				if (d === null) {
-					throw {
-						code: "missing-docs",
-						message: `Reference ${ref}`,
-					};
-				}
+				// if (d === null) {
+				// 	throw {
+				// 		code: "missing-docs",
+				// 		message: `Reference ${ref.documentId}[COLL / ${ref.collectionId}]`,
+				// 	};
+				// }
 
 				await Helper.set(config.store, config.getDocRef(ref), data);
 				return data;
@@ -328,7 +329,8 @@ export default function ItemStorageCollection(
 				if (prevData === null) {
 					throw {
 						code: "missing-docs",
-						message: `Reference ${ref}`,
+						message: `Reference ${ref.documentId}[COLL / ${ref.collectionId}]`,
+						// message: `Reference ${ref}`,
 					};
 				}
 
