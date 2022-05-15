@@ -1,6 +1,6 @@
 {
 	"name": "papai",
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"description": "JSON-modelled data",
 	"files": [
 		"collection",
