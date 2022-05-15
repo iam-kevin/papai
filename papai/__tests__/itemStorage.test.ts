@@ -9,28 +9,31 @@ import {
 } from "../src/collection";
 import ItemStorageStore from "../src/stores/collection/ItemStorage";
 
+import {
+	StateTrackingBox,
+	onTrackStoreAddUpdateChanges,
+	updateChangesToStore,
+} from "../src/distributed/store";
+
 import { nanoid } from "nanoid";
+import { HybridLogicalClock } from "../src/distributed/clock";
 
 const $ = {};
 
 const FakeAsyncStorage = {
 	async getItem(key: string): Promise<string | null> {
-		console.log("getItem fired!");
 		return $[key] ?? null;
 	},
 	async setItem(key: string, value: string) {
-		console.log("setItem fired!");
 		$[key] = value;
 	},
 	async multiGet(keys: string[]) {
-		console.log("multiGet fired!");
 		return keys.map((key) => [key, $[key] ?? null]) as [
 			string,
 			string | null
 		][];
 	},
 	async multiSet(kvp: [string, string][]) {
-		console.log("multiSet fired!");
 		kvp.forEach(([key, value]) => {
 			$[key] = value;
 		});
@@ -51,6 +54,19 @@ const store = getStore(
 	)
 );
 
+const statebox = new StateTrackingBox(new HybridLogicalClock(nanoid(34)));
+
+// Document
+onTrackStoreAddUpdateChanges(
+	store,
+	statebox,
+	(d) => `${d.collectionId}/${d.documentId}`,
+	(ref, state) => {
+		// ...
+		console.log(state);
+	}
+);
+
 const dummy = collection(store, "dummy$");
 
 async function test() {
@@ -64,7 +80,7 @@ async function test() {
 
 	// pass
 	await setDocs(dummy, [
-		["wWau0KUBpum1Y3u7Vjftm", { d: "yOLO asdasds" }],
+		[id_, { d: "yOLO asdasds" }],
 		["qI_ratQzPCCq20kTHDW57", { d: "asdadasdsadas" }],
 	]);
 
@@ -76,6 +92,10 @@ async function test() {
 	}
 }
 
-test().then(() => {
-	console.log($);
-});
+test()
+	.then(() => {
+		console.log($);
+	})
+	.then(() => {
+		console.log("StateBOX: ", Array.from(statebox.latest()));
+	});

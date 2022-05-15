@@ -15,7 +15,7 @@ import { DistributedDataType } from "./types";
 export function getDeltaCollection(store: Store) {}
 
 class TrackingBox {
-	append(docRef: string, state: DistributedDataType) {
+	append(_docRef: string, _state: DistributedDataType) {
 		throw new Error("Not Implemented");
 	}
 
@@ -76,17 +76,25 @@ export class StateTrackingBox extends TrackingBox {
  * Consolidation done by using `distributed/state-based` logic
  * @param store
  */
-export function onTrackStoreChanges(
+export function onTrackStoreAddUpdateChanges(
 	store: Store,
 	trackingBox: TrackingBox,
 	// hash key to identify associated state
-	documentRefToKeyStr: (dr: Document.Ref) => string
+	documentRefToKeyStr: (dr: Document.Ref) => string,
+	callback: (
+		doc: Document.Ref,
+		documentRef: string,
+		state: DistributedDataType
+	) => void
 ) {
 	const subscription = store.documentObservable.subscribe((s) => {
 		const documentRef = documentRefToKeyStr(s.ref);
 		if (s.action === "added" || s.action === "changed") {
 			// state box
 			trackingBox.append(documentRef, s.state);
+
+			// fires callback after action
+			callback(s.ref, documentRef, s.state);
 		}
 	});
 
