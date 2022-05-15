@@ -170,6 +170,37 @@ export class Store {
 				return documentIds;
 			}
 
+			if (action.type === "set-docs") {
+				const idDataPairs = action.arguments;
+
+				// execute set-docs
+				await collHandler<A>(action, options);
+
+				//
+				this.obsColl.next({
+					action: "added",
+					documents: idDataPairs.map(([documentId, _]) => ({
+						collectionId: action.ref.collectionId,
+						documentId: documentId,
+					})),
+				});
+
+				idDataPairs.forEach(([documentId, state], ix) => {
+					const docRef = {
+						collectionId: action.ref.collectionId,
+						documentId,
+					};
+
+					this.obsDoc.next({
+						ref: docRef,
+						action: "added",
+						state: state,
+					});
+				});
+
+				return;
+			}
+
 			return (await collHandler<A>(action, options)) as [string, A][];
 		};
 	}
