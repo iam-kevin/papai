@@ -190,30 +190,36 @@ export default function ItemStorageCollection(
 					};
 				}
 
-				const docRefs = refs.map((documentId) =>
+				const docRefs = refs.map((documentId) => [
 					config.getDocRef({
 						collectionId: ref.collectionId,
 						documentId,
-					})
-				);
+					}),
+					documentId,
+				]);
 
+				// map the keys
+				const docRefMap = Object.fromEntries(docRefs);
 				const docRefDataPairs = (await config.store.multiGet(
-					docRefs
+					docRefs.map((d) => d[0])
 				)) as KeyValuePair[];
 
 				// add logic stuff here
 
 				return docRefDataPairs
-					.map(([_docRef, dataStr], ix) => {
+					.map(([_docRef, dataStr]) => {
 						//..
 						return [
-							docRefs[ix],
+							docRefMap[_docRef],
 							dataStr !== null
 								? (JSON.parse(dataStr) as D)
 								: null,
 						];
 					})
-					.filter((d) => d[1] !== null) as [string, D][];
+					.filter((d) => d[1] !== null || d[1] !== undefined) as [
+					string,
+					D
+				][];
 			},
 
 			setDocs: async (ref, data, options) => {
