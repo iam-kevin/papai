@@ -5,35 +5,39 @@ import { Collection, Document } from "./types";
  * Document functions
  * ------------
  */
-export function getDoc<D extends Document.Data>(doc: DocumentNode<D>) {
-	return doc.handle(
+export async function getDoc<D extends Document.Data>(doc: DocumentNode<D>) {
+	return (await doc.handle(
 		{ ref: doc.ref, arguments: null, type: "get" },
 		doc.options
-	);
+	)) as D | null;
 }
 
-export function setDoc<D extends Document.Data>(doc: DocumentNode<D>, data: D) {
-	return doc.handle(
+export async function setDoc<D extends Document.Data>(
+	doc: DocumentNode<D>,
+	data: D
+) {
+	return (await doc.handle(
 		{ ref: doc.ref, arguments: data, type: "set" },
 		doc.options
-	);
+	)) as void;
 }
 
-export function updateDoc<D extends Document.Data>(
+export async function updateDoc<D extends Document.Data>(
 	doc: DocumentNode<D>,
 	data: Partial<D>
 ) {
-	return doc.handle(
+	return (await doc.handle(
 		{ ref: doc.ref, arguments: data, type: "update" },
 		doc.options
-	);
+	)) as D;
 }
 
-export function deleteDoc<D extends Document.Data>(doc: DocumentNode<D>) {
-	return doc.handle(
+export async function deleteDoc<D extends Document.Data>(doc: DocumentNode<D>) {
+	await doc.handle(
 		{ ref: doc.ref, arguments: null, type: "delete" },
 		doc.options
 	);
+	return;
 }
 
 /**

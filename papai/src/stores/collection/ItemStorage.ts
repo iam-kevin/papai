@@ -99,7 +99,7 @@ export default function ItemStorageCollection(
 		coll: {
 			add: async (ref, data) => {
 				// init collection
-				setCollection(
+				await setCollection(
 					config.store,
 					config.nameReference,
 					ref.collectionId
@@ -131,7 +131,7 @@ export default function ItemStorageCollection(
 			},
 			addMultiple: async (ref, data) => {
 				// init collection
-				setCollection(
+				await setCollection(
 					config.store,
 					config.nameReference,
 					ref.collectionId
@@ -171,7 +171,7 @@ export default function ItemStorageCollection(
 				query: Collection.DocumentQuery
 			) => {
 				// init collection
-				setCollection(
+				await setCollection(
 					config.store,
 					config.nameReference,
 					ref.collectionId
@@ -184,10 +184,11 @@ export default function ItemStorageCollection(
 				);
 
 				if (refs === null) {
-					throw {
-						code: "missing",
-						message: `Collection ${ref.collectionId}`,
-					};
+					return [];
+					// throw {
+					// 	code: "missing",
+					// 	message: `Collection ${ref.collectionId}`,
+					// };
 				}
 
 				const docRefs = refs.map((documentId) => [
@@ -223,7 +224,7 @@ export default function ItemStorageCollection(
 			},
 
 			setDocs: async (ref, data, options) => {
-				setCollection(
+				await setCollection(
 					config.store,
 					config.nameReference,
 					ref.collectionId
@@ -266,7 +267,7 @@ export default function ItemStorageCollection(
 			// documents
 			docs: async (ref) => {
 				// init collection
-				setCollection(
+				await setCollection(
 					config.store,
 					config.nameReference,
 					ref.collectionId
@@ -287,6 +288,9 @@ export default function ItemStorageCollection(
 
 				return new Set(refs);
 			},
+			// clear: () => {
+			// 	// remove all items in the collection
+			// },
 		},
 		doc: {
 			get: async <D extends Document.Data>(ref: Document.Ref) => {
@@ -300,6 +304,11 @@ export default function ItemStorageCollection(
 				ref: Document.Ref,
 				data: D
 			) => {
+				await setCollection(
+					config.store,
+					config.nameReference,
+					ref.collectionId
+				);
 				// const d = await Helper.get<D | null>(
 				// 	config.store,
 				// 	config.getDocRef(ref),
@@ -312,6 +321,17 @@ export default function ItemStorageCollection(
 				// 		message: `Reference ${ref.documentId}[COLL / ${ref.collectionId}]`,
 				// 	};
 				// }
+				const refs = await Helper.get<string[]>(
+					config.store,
+					config.getCollRef(ref),
+					[]
+				);
+
+				await Helper.set(
+					config.store,
+					config.getCollRef(ref),
+					Array.from(new Set([...refs, ref.documentId]))
+				);
 
 				await Helper.set(config.store, config.getDocRef(ref), data);
 				return data;
