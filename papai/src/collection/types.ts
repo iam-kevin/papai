@@ -25,7 +25,8 @@ export declare namespace Collection {
 		| ActionConfig<"add-docs", Ref, D[]>
 		| ActionConfig<"set-docs", Ref, [string, D][]>
 		| ActionConfig<"get-docs", Ref, { query: DocumentQuery }>
-		| ActionConfig<"docs", Ref, null>;
+		| ActionConfig<"docs", Ref, null>
+		| ActionConfig<"clear", Ref, null>;
 
 	type ActionHandler = <A extends Document.Data>(
 		action: Collection.Action<A>,
@@ -38,6 +39,8 @@ export declare namespace Collection {
 
 	/**
 	 * Output's for this must be serializable
+	 * ------------
+	 * - For compatibility with
 	 */
 	type FnPair = {
 		add: <D extends Document.Data>(
@@ -61,9 +64,11 @@ export declare namespace Collection {
 			options: Options
 		) => Promise<void>;
 		docs: (ref: Ref, options: Options) => Promise<Set<string>>;
-		// // Ideally this is only fires when with `addDoc` or `addDocs`;
-		// // then again, that's an extra check step
-		// create?: (ref: Ref) => Promise<void>;
+
+		/**
+		 *
+		 */
+		clear: (ref: Ref, options: Options) => Promise<void>;
 	};
 }
 

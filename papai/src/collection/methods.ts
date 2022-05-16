@@ -100,3 +100,22 @@ export async function addDocs<D extends Document.Data>(
 		coll.options
 	)) as string[];
 }
+
+/**
+ * Clear Collection
+ * @param coll
+ * @returns
+ */
+export async function clearCollection<D extends Document.Data>(
+	coll: CollectionNode<D>
+) {
+	await coll.handle(
+		{
+			type: "clear",
+			ref: coll.ref,
+			arguments: null,
+		},
+		coll.options
+	);
+	return;
+}

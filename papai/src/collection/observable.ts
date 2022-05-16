@@ -1,37 +1,52 @@
-import { CollectionNode, DocumentNode } from "./core";
-import { Document } from "./types";
+import { CollectionNode, DocumentNode, Store } from "./core";
+import { Collection, Document } from "./types";
+
+import _isEqual from "lodash.isequal";
+import { collectionNode, documentNode } from ".";
 
 export type DocumentObservedAction<D extends Document.Data = Document.Data> = {
 	ref: Document.Ref;
-} & (
-	| { action: "added"; state: D }
-	| { action: "changed"; data: Partial<D>; state: D }
-	| { action: "removed" }
-);
+} & ({ action: "updated"; state: D } | { action: "removed" });
 
 export type CollectionObservedAction = {
-	// ref: Collection.Ref;
+	ref: Collection.Ref;
 } & (
-	| { action: "updated"; documents: Document.Ref[] }
-	| { action: "added"; documents: Document.Ref[] }
 	| { action: "removed"; documents: Document.Ref[] }
+	| { action: "changed"; documents: Document.Ref[] }
+	| { action: "clear" }
 );
+
+export function onSnapshot<D extends Document.Data>(
+	store: Store,
+	cb: (colnode: CollectionNode<D>, docnode: DocumentNode<D>) => void
+) {
+	return store.documentObservable.subscribe((f) => {
+		// ...
+		cb(
+			collectionNode<D>(store, { collectionId: f.ref.collectionId }),
+			documentNode<D>(store, f.ref)
+		);
+	});
+}
 
 /**
  * Set up listener for the actions happening in the collection
  * @param doc
- * @param action
  * @param cb
  */
 export function onDocumentSnapshot<D extends Document.Data>(
 	doc: DocumentNode<D>,
-	action: DocumentObservedAction<D>["action"],
-	cb: (data: any) => void
+	cb: (action: DocumentObservedAction<D>["action"], data?: D) => void
 ) {
 	return doc.observable.subscribe((o) => {
-		if (o.action === action) cb(o);
+		if (_isEqual(o.ref, doc.ref)) {
+			if (o.action === "removed") {
+				cb(o.action);
+			} else {
+				cb(o.action, o.state);
+			}
+		}
 	});
-	// logic
 }
 
 /**
@@ -39,13 +54,18 @@ export function onDocumentSnapshot<D extends Document.Data>(
  */
 export function onCollectionSnapshot<D extends Document.Data>(
 	col: CollectionNode<D>,
-	action: CollectionObservedAction["action"],
-	cb: (data: any) => void
+	cb: (
+		action: CollectionObservedAction["action"],
+		documents?: Document.Ref[]
+	) => void
 ) {
-	return col.observable.subscribe((s) => {
-		if (s.action === action) {
-			cb(s);
-			return;
+	return col.observable.subscribe((o) => {
+		if (_isEqual(o.ref, col.ref)) {
+			if (o.action === "clear") {
+				cb(o.action);
+			} else {
+				cb(o.action, o.documents);
+			}
 		}
 	});
 }

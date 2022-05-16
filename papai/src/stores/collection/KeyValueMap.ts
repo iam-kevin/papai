@@ -28,12 +28,10 @@ export default function KeyValueMapCollection(
 	const map = new Map<CollectionId, Map<DocumentId, Document.Data>>();
 
 	return {
-		// TODO: update to this
-		// coll: (options) => {}
-		// docs: (options) => {}
-		// OR
-		// coll { add(ref, data, collOpts) => {}}
-		// docs { set(ref, data, opts: { collOpts, docOpts }) => {}}
+		clearStore: async () => {
+			// cler the entire store
+			map.clear();
+		},
 		coll: {
 			add: async (ref, data, options) => {
 				// Initiate
@@ -129,6 +127,19 @@ export default function KeyValueMapCollection(
 
 				// Get documents
 				return new Set(collMap.keys());
+			},
+			clear: async (ref, options) => {
+				if (!map.has(ref.collectionId)) {
+					return;
+				}
+
+				const collMap = map.get(ref.collectionId) as Map<
+					DocumentId,
+					Document.Data
+				>;
+
+				// clear document
+				collMap.clear();
 			},
 		},
 		doc: {

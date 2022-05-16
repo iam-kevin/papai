@@ -99,7 +99,7 @@ export function onTrackStoreAddUpdateChanges(
 ) {
 	const subscription = store.documentObservable.subscribe((s) => {
 		const documentRef = documentRefToKeyStr(s.ref);
-		if (s.action === "added" || s.action === "changed") {
+		if (s.action === "updated") {
 			// state box
 			trackingBox.append(documentRef, s.ref, s.state);
 

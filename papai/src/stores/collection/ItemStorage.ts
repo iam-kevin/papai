@@ -5,13 +5,16 @@ type KeyValuePair = [string, string | null];
 export type AsyncItemStorage = {
 	getItem: (ref: string) => Promise<string | null>;
 	setItem: (ref: string, item: string) => Promise<void>;
+	removeItem: (ref: string) => Promise<void>;
 	multiGet: (refs: string[]) => Promise<readonly KeyValuePair[] | void>;
 	multiSet: (kvp: Array<[string, string]>) => Promise<void>;
+	multiRemove: (refs: string[]) => Promise<void>;
 };
 
 export type SyncSingleItemStorage = {
 	getItem: (ref: string) => string | null;
 	setItem: (ref: string, item: string) => void;
+	removeItem: (ref: string) => void;
 };
 
 /**
@@ -32,6 +35,12 @@ export function asyncAdapter(
 			kvp.map(([key, val]) => {
 				syncStore.setItem(key, val);
 			});
+		},
+		removeItem: async (key: string) => syncStore.removeItem(key),
+		multiRemove: async (refs: string[]) => {
+			for (let ref of refs) {
+				syncStore.removeItem(ref);
+			}
 		},
 	};
 }
@@ -93,10 +102,83 @@ export default function ItemStorageCollection(
 	},
 	generateId: () => string
 ): StoreConstructor {
-	// create collections map from name
+	const clearCollectionDocuments = async (ref: Collection.Ref) => {
+		const refs = await Helper.get<string[]>(
+			config.store,
+			config.getCollRef(ref),
+			[]
+		);
 
+		// get all document keys
+		const docRefs = refs.map((documentId) =>
+			config.getDocRef({
+				collectionId: ref.collectionId,
+				documentId,
+			})
+		);
+
+		// remove all documents in the collection
+		await config.store.multiRemove(docRefs);
+	};
+
+	// create collections map from name
 	return {
+		clearStore: async () => {
+			// get all collections
+			const collIds = await Helper.get<string[]>(
+				config.store,
+				config.nameReference,
+				[]
+			);
+
+			const allDocsRefs = ([] as string[]).concat(
+				...(await Promise.all(
+					collIds.map(async (collectionId) => {
+						const docs = await Helper.get(
+							config.store,
+							config.getCollRef({ collectionId }),
+							[]
+						);
+						return docs.map((documentId) =>
+							config.getDocRef({ collectionId, documentId })
+						);
+					})
+				))
+			);
+
+			console.log({ allDocsRefs });
+
+			// remove all
+			await config.store.multiRemove(allDocsRefs);
+
+			// reference for the mother of all collections
+			await config.store.removeItem(config.nameReference);
+		},
 		coll: {
+			clear: async (ref) => {
+				const collIds = await Helper.get<string[]>(
+					config.store,
+					config.nameReference,
+					[]
+				);
+
+				const set = new Set(collIds);
+				set.delete(ref.collectionId);
+
+				// reset value with the collection name omitted
+				await Helper.set(
+					config.store,
+					config.nameReference,
+					Array.from(set)
+				);
+
+				await clearCollectionDocuments(ref);
+
+				// remove the collection
+				await config.store.removeItem(config.getCollRef(ref));
+
+				// remove stuff
+			},
 			add: async (ref, data) => {
 				// init collection
 				await setCollection(
@@ -360,7 +442,22 @@ export default function ItemStorageCollection(
 				return newData;
 			},
 			delete: async (ref) => {
-				throw new Error("Not Implemented");
+				const docIds = await Helper.get<string[]>(
+					config.store,
+					config.getCollRef(ref),
+					[]
+				);
+				const set = new Set(docIds);
+				set.delete(ref.documentId);
+
+				// set the new document list with the omit document
+				await Helper.set(
+					config.store,
+					config.getCollRef(ref),
+					Array.from(set)
+				);
+
+				await config.store.removeItem(config.getDocRef(ref));
 			},
 		},
 		getCollections: async () => {

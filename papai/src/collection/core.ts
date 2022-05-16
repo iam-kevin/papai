@@ -54,6 +54,7 @@ export class Store {
 
 				//
 				this.obsColl.next({
+					ref: action.ref,
 					action: "removed",
 					documents: [action.ref],
 				});
@@ -71,14 +72,15 @@ export class Store {
 				const s = (await docHandler<A>(action, options)) as A;
 
 				this.obsColl.next({
-					action: "updated",
+					ref: action.ref,
+					action: "changed",
 					documents: [action.ref],
 				});
 
 				this.obsDoc.next({
-					action: "changed",
+					action: "updated",
 					ref: action.ref,
-					data: action.arguments,
+					// data: action.arguments,
 					state: s,
 				});
 
@@ -89,14 +91,15 @@ export class Store {
 				const p = (await docHandler<A>(action, options)) as A;
 
 				this.obsColl.next({
-					action: "updated",
+					ref: action.ref,
+					action: "changed",
 					documents: [action.ref],
 				});
 
 				this.obsDoc.next({
-					action: "changed",
+					action: "updated",
 					ref: action.ref,
-					data: action.arguments,
+					// data: action.arguments,
 					state: p,
 				});
 
@@ -110,6 +113,17 @@ export class Store {
 			action: Collection.Action<A>,
 			options: Collection.Options
 		) => {
+			if (action.type === "clear") {
+				await collHandler<A>(action, options);
+
+				this.obsColl.next({
+					ref: action.ref,
+					action: "clear",
+				});
+
+				return;
+			}
+
 			// check if action is for documents
 			if (action.type === "add") {
 				const documentId = (await collHandler<A>(
@@ -124,14 +138,15 @@ export class Store {
 
 				//
 				this.obsColl.next({
-					action: "added",
+					ref: action.ref,
+					action: "changed",
 					documents: [docRef],
 				});
 
 				//
 				this.obsDoc.next({
 					ref: docRef,
-					action: "added",
+					action: "updated",
 					state: action.arguments,
 				});
 
@@ -147,7 +162,8 @@ export class Store {
 
 				//
 				this.obsColl.next({
-					action: "added",
+					ref: action.ref,
+					action: "changed",
 					documents: documentIds.map((d) => ({
 						collectionId: action.ref.collectionId,
 						documentId: d,
@@ -162,7 +178,7 @@ export class Store {
 
 					this.obsDoc.next({
 						ref: docRef,
-						action: "added",
+						action: "updated",
 						state: action.arguments[ix],
 					});
 				});
@@ -178,7 +194,8 @@ export class Store {
 
 				//
 				this.obsColl.next({
-					action: "added",
+					ref: action.ref,
+					action: "changed",
 					documents: idDataPairs.map(([documentId, _]) => ({
 						collectionId: action.ref.collectionId,
 						documentId: documentId,
@@ -193,7 +210,7 @@ export class Store {
 
 					this.obsDoc.next({
 						ref: docRef,
-						action: "added",
+						action: "updated",
 						state: state,
 					});
 				});

@@ -9,6 +9,32 @@ export * from "./observable";
 export * from "./types";
 
 /**
+ * Document Node
+ * @param store
+ * @param docRef
+ * @returns
+ */
+export function documentNode<D extends Document.Data>(
+	store: Store,
+	docRef: Document.Ref
+) {
+	return doc(collection<D>(store, docRef.collectionId), docRef.documentId);
+}
+
+/**
+ * Collection Node
+ * @param store
+ * @param collRef
+ * @returns
+ */
+export function collectionNode<D extends Document.Data>(
+	store: Store,
+	collRef: Collection.Ref
+) {
+	return collection<D>(store, collRef.collectionId);
+}
+
+/**
  * Gets the reference of the collection from the sotre
  * @param store
  * @param id
@@ -58,6 +84,7 @@ export type StoreConstructor = {
 	coll: Collection.FnPair;
 	doc: Document.FnPair;
 	getCollections: GetCollections;
+	clearStore: () => Promise<void>;
 	options: {
 		collection: Collection.Options;
 		document: Document.Options;
@@ -108,8 +135,12 @@ export function getStore(args: StoreConstructor) {
 					collectionOptions
 				);
 			}
+
 			case "docs": {
 				return await args.coll.docs(action.ref, collectionOptions);
+			}
+			case "clear": {
+				return await args.coll.clear(action.ref, collectionOptions);
 			}
 			default: {
 				throw {
@@ -152,13 +183,13 @@ export function getStore(args: StoreConstructor) {
 				);
 			}
 			case "delete": {
-				await args.doc.delete(action.ref, documentOptions);
+				return await args.doc.delete(action.ref, documentOptions);
 			}
 			default: {
 				throw {
 					code: "failed",
 					// @ts-ignore
-					message: `Unknown action object ${action}`,
+					message: `Unknown action object ${action.type}`,
 				};
 			}
 		}
