@@ -17,6 +17,7 @@ export class Store {
 	public performDocumentAction: Document.ActionHandler;
 
 	public collections: () => Promise<Set<Collection.Ref>>;
+	public wipeStore;
 
 	private _defColOpts;
 	private _defDocOpts;
@@ -33,6 +34,7 @@ export class Store {
 		collHandler: Collection.ActionHandler,
 		docHandler: Document.ActionHandler,
 		getCollections: GetCollections,
+		wipeStore: () => Promise<void>,
 		defaultCollectionOptions: Collection.Options,
 		defaultDocumentOptions: Document.Options
 	) {
@@ -44,6 +46,10 @@ export class Store {
 		this.collections = async () => {
 			return await getCollections();
 		};
+
+		// removes all things on the store
+		// TODO: attach this with observable
+		this.wipeStore = wipeStore;
 
 		this.performDocumentAction = async <A extends Document.Data>(
 			action: Document.Action<A>,

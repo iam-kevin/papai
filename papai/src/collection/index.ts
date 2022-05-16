@@ -91,6 +91,10 @@ export type StoreConstructor = {
 	};
 };
 
+export async function wipeStore(store: Store) {
+	return await store.wipeStore();
+}
+
 /**
  * Creates a store instance from a `StoreConstructor`.
  * Providing an API to interact with store
@@ -199,6 +203,7 @@ export function getStore(args: StoreConstructor) {
 		collectionHandler,
 		documentHandler,
 		args.getCollections,
+		args.clearStore,
 		args.options.collection,
 		args.options.document
 	);
