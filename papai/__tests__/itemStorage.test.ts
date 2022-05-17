@@ -1,6 +1,8 @@
 import {
 	addDoc,
+	clearCollection,
 	collection,
+	deleteDoc,
 	doc,
 	getDocs,
 	getStore,
@@ -18,7 +20,7 @@ import {
 import { nanoid } from "nanoid";
 import { HybridLogicalClock } from "../src/distributed/clock";
 
-const $ = {};
+let $ = {};
 
 const FakeAsyncStorage = {
 	async getItem(key: string): Promise<string | null> {
@@ -37,6 +39,18 @@ const FakeAsyncStorage = {
 		kvp.forEach(([key, value]) => {
 			$[key] = value;
 		});
+	},
+	async removeItem(key: string) {
+		delete $[key];
+	},
+	async multiRemove(keys: string[]) {
+		for (let key of keys) {
+			delete $[key];
+		}
+	},
+	async clear() {
+		// cleared
+		$ = {};
 	},
 };
 
@@ -68,18 +82,21 @@ onTrackStoreAddUpdateChanges(
 );
 
 const dummy = collection(store, "dummy$");
+const dummy2 = collection(store, "dummy$2");
 
 async function test() {
 	// // pass
 	const id_ = await addDoc(dummy, { d: "This is the data" });
-	const id = await addDoc(dummy, { d: "another data here" });
+	const id = await addDoc(dummy2, { d: "another data here" });
 	await addDoc(dummy, { d: "cheeese here" });
 
 	// pass
-	await setDoc(doc(dummy, id), { d: "not another one, but the only one" });
+	await setDoc(doc(dummy2, id), { d: "not another one, but the only one" });
+
+	setDoc(doc(dummy, "123_"), { x: "ssdsdsd" });
 
 	// pass
-	await setDocs(dummy, [
+	await setDocs(dummy2, [
 		[id_, { d: "yOLO asdasds" }],
 		["qI_ratQzPCCq20kTHDW57", { d: "asdadasdsadas" }],
 	]);
@@ -90,6 +107,11 @@ async function test() {
 	} catch (err) {
 		console.log(err.message);
 	}
+
+	await deleteDoc(doc(dummy2, id_));
+	await deleteDoc(doc(dummy2, id_));
+	await clearCollection(dummy);
+	console.log("erro?");
 }
 
 test()
