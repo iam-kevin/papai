@@ -110,7 +110,7 @@ Use the store in your projects
     ```ts
     import { doc, updateDoc } from "papai/collection";
 
-    // read document of id from students collection | still type-safe
+    // update document for student with id `johnId` | still type-safe
     await updateDoc(doc(students, johnId), { course: "science" });
     ```
 
