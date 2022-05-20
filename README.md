@@ -135,7 +135,7 @@ Use the store in your projects
         -   [x] Data consolidation logic
     -   [ ] Delta-based CRDTs
         -   Check papers https://arxiv.org/abs/1410.2803 + https://arxiv.org/abs/1803.02750
-        -   [ ] CRDTs for `collection` type data
+        -   [x] CRDTs for `collection` type data
         -   [ ] CRDTs for `logs` type data
         -   [ ] Data consolidation logic
     -   [ ] <strike> Operation-based CRDT</strike> (Might not implement this)
