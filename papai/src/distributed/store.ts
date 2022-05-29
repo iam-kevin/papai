@@ -15,11 +15,17 @@ import { DistributedDataType } from "./types";
 export function getDeltaCollection(store: Store) {}
 
 class TrackingBox {
-	append(key: string, ref: Document.Ref, _state: DistributedDataType) {
+	append(
+		key: string,
+		ref: Document.Ref,
+		_state: DistributedDataType
+	): HybridLogicalClock {
 		throw new Error("Not Implemented");
 	}
 
-	latest(): IterableIterator<[Document.Ref, DistributedDataType]> {
+	latest(): IterableIterator<
+		[Document.Ref, DistributedDataType, HybridLogicalClock]
+	> {
 		throw new Error("Not Implemented");
 	}
 }
@@ -57,8 +63,13 @@ export class StateTrackingBox extends TrackingBox {
 
 		const set = this._sset.get(docRefKey) as SSet<DistributedDataType>;
 
+		const clock = this.nextClock();
+
 		// add new state
-		set.add(new ClockedState(state, this.nextClock()));
+		set.add(new ClockedState(state, clock));
+
+		// pass clock associated
+		return clock;
 	}
 
 	nextClock() {
@@ -72,13 +83,15 @@ export class StateTrackingBox extends TrackingBox {
 	}
 
 	latest() {
-		const n = new Set<[Document.Ref, DistributedDataType]>();
+		const n = new Set<
+			[Document.Ref, DistributedDataType, HybridLogicalClock]
+		>();
 		for (let [id, set] of this.mapSet()) {
 			let out = latestState(set);
 			const idRef = this._mapKey.get(id);
 
 			if (idRef !== undefined) {
-				n.add([idRef, out.object]);
+				n.add([idRef, out.object, out.clock]);
 			}
 		}
 
@@ -95,16 +108,20 @@ export function onTrackStoreAddUpdateChanges(
 	trackingBox: TrackingBox,
 	// hash key to identify associated state
 	documentRefToKeyStr: (dr: Document.Ref) => string,
-	callback: (doc: Document.Ref, state: DistributedDataType) => void
+	callback: (
+		doc: Document.Ref,
+		state: DistributedDataType,
+		clock: HybridLogicalClock
+	) => void
 ) {
 	const subscription = store.documentObservable.subscribe((s) => {
 		const documentRef = documentRefToKeyStr(s.ref);
 		if (s.action === "updated") {
 			// state box
-			trackingBox.append(documentRef, s.ref, s.state);
+			const clock = trackingBox.append(documentRef, s.ref, s.state);
 
 			// fires callback after action
-			callback(s.ref, s.state);
+			callback(s.ref, s.state, clock);
 		}
 	});
 
@@ -118,6 +135,7 @@ export async function updateChangesToStore(
 	for (let [
 		{ collectionId, documentId },
 		data,
+		_,
 	] of updateStateTrackingBox.latest()) {
 		// THINK: Maybe it's time for a multi-set (or `setDocs`)
 		await setDoc(doc(collection(store, collectionId), documentId), data);
