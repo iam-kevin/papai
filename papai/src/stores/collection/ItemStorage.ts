@@ -1,5 +1,5 @@
-import { Collection, StoreConstructor } from "../../collection";
-import { Document } from "../../collection";
+import { StoreConstructor } from "../../collection";
+import { Document, Collection } from "../../collection/types";
 
 type KeyValuePair = [string, string | null];
 export type AsyncItemStorage = {

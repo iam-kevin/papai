@@ -1,4 +1,5 @@
-import { StoreConstructor, Document, Collection } from "../../collection";
+import { StoreConstructor } from "../../collection";
+import { Document, Collection } from "../../collection/types";
 
 /**
  * Represent storage for key value pair

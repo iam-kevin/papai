@@ -7,6 +7,7 @@ import { CollectionNode, DocumentNode, GetCollections, Store } from "./core";
 export * from "./methods";
 export * from "./observable";
 export * from "./types";
+export { Store };
 
 /**
  * Document Node
@@ -14,7 +15,7 @@ export * from "./types";
  * @param docRef
  * @returns
  */
-export function documentNode<D extends Document.Data>(
+export function Document<D extends Document.Data>(
 	store: Store,
 	docRef: Document.Ref
 ) {
@@ -27,7 +28,7 @@ export function documentNode<D extends Document.Data>(
  * @param collRef
  * @returns
  */
-export function collectionNode<D extends Document.Data>(
+export function Collection<D extends Document.Data>(
 	store: Store,
 	collRef: Collection.Ref
 ) {

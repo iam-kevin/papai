@@ -2,7 +2,7 @@ import { CollectionNode, DocumentNode, Store } from "./core";
 import { Collection, Document } from "./types";
 
 import _isEqual from "lodash.isequal";
-import { collectionNode, documentNode } from ".";
+import { Collection as CollNode, Document as DocNode } from ".";
 
 export type DocumentObservedAction<D extends Document.Data = Document.Data> = {
 	ref: Document.Ref;
@@ -23,8 +23,8 @@ export function onSnapshot<D extends Document.Data>(
 	return store.documentObservable.subscribe((f) => {
 		// ...
 		cb(
-			collectionNode<D>(store, { collectionId: f.ref.collectionId }),
-			documentNode<D>(store, f.ref)
+			CollNode<D>(store, { collectionId: f.ref.collectionId }),
+			DocNode<D>(store, f.ref)
 		);
 	});
 }

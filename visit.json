@@ -1,0 +1,51 @@
+{
+	"id": "visit:0a92718b-b2ee-4063-86b8-73a55aef2ec2",
+	"resourceType": "Visit",
+	"code": null,
+	"subject": {
+		"id": "11111111111111",
+		"resourceReferenced": "Patient",
+		"resourceType": "Reference"
+	},
+	"practitioner": {
+		"id": "qUNX4fZpvZQmufJ9saWyOcHfKBu1",
+		"resourceReferenced": "Practitioner",
+		"resourceType": "Reference"
+	},
+	"assessments": [],
+	"associatedAppointmentResponse": null,
+	"date": "Tue, 28 Jun 2022 00:00:00 GMT",
+	"createdAt": "Wed, 22 Jun 2022 21:11:44 GMT",
+	"extendedData": {
+		"arvRegimenUnit": [],
+		"regimenDuration": "30-days",
+		"medications": [
+			"amoxicillin-clavulanate-amoxyclav",
+			"amoxicillin-oral-suspension"
+		],
+		"appointmentDate": "24 / 06 / 2022",
+		"investigations": ["dried-blood-spot-dbs-test", "chest-x-ray-cxr"],
+		"visitType": "community",
+		"appointmentId": "Wed, 29 Jun 2022 00:00:00 GMT",
+		"dateOfVisit": "28 / 06 / 2022",
+		"arvRegimens": ["tablets:tdf"]
+	},
+	"investigationRequests": [],
+	"prescriptions": [
+		{
+			"id": "med-req:f73d07d9-5699-4c38-aab0-237f69926b88",
+			"resourceReferenced": "MedicationRequest",
+			"resourceType": "Reference"
+		},
+		{
+			"id": "med-req:53725290-96ca-43b3-a5b6-966cb2196b3f",
+			"resourceReferenced": "MedicationRequest",
+			"resourceType": "Reference"
+		},
+		{
+			"id": "med-req:eb01213f-3e68-4163-adfc-19601e0efc1c",
+			"resourceReferenced": "MedicationRequest",
+			"resourceType": "Reference"
+		}
+	]
+}

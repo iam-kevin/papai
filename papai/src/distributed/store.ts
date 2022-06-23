@@ -2,8 +2,10 @@
  * Logic for distributed stores
  */
 
-import { collection, doc, Document, setDoc } from "../collection";
+import { collection, doc, setDoc } from "../collection";
+import type { Document } from "../collection/types";
 import { Store } from "../collection/core";
+
 import { HybridLogicalClock } from "./clock";
 import { ClockedState, latestState, SSet } from "./state-based";
 import { DistributedDataType } from "./types";
@@ -16,9 +18,9 @@ export function getDeltaCollection(store: Store) {}
 
 class TrackingBox {
 	append(
-		key: string,
-		ref: Document.Ref,
-		_state: DistributedDataType
+		docRef: Document.Ref,
+		state: DistributedDataType,
+		clock?: HybridLogicalClock
 	): HybridLogicalClock {
 		throw new Error("Not Implemented");
 	}
@@ -37,9 +39,18 @@ export class StateTrackingBox extends TrackingBox {
 	private _hlc: HybridLogicalClock;
 	private _mapKey = new Map<string, Document.Ref>();
 
-	constructor(initialClock: HybridLogicalClock) {
+	private _dr2str;
+	constructor(
+		initialClock: HybridLogicalClock,
+		docRefToKey: (dr: Document.Ref) => string
+	) {
 		super();
 		this._hlc = initialClock;
+		this._dr2str = docRefToKey;
+	}
+
+	getKey(d: Document.Ref) {
+		return this._dr2str(d);
 	}
 
 	mapSet() {
@@ -52,10 +63,11 @@ export class StateTrackingBox extends TrackingBox {
 	 * @param state
 	 */
 	append(
-		docRefKey: string,
 		docRef: Document.Ref,
-		state: DistributedDataType
+		state: DistributedDataType,
+		clock?: HybridLogicalClock
 	) {
+		const docRefKey = this.getKey(docRef);
 		if (!this._sset.has(docRefKey)) {
 			this._sset.set(docRefKey, new SSet(this.nextClock()));
 			this._mapKey.set(docRefKey, docRef);
@@ -63,13 +75,13 @@ export class StateTrackingBox extends TrackingBox {
 
 		const set = this._sset.get(docRefKey) as SSet<DistributedDataType>;
 
-		const clock = this.nextClock();
+		const c_ = clock ?? this.nextClock();
 
 		// add new state
-		set.add(new ClockedState(state, clock));
+		set.add(new ClockedState(state, c_));
 
 		// pass clock associated
-		return clock;
+		return c_;
 	}
 
 	nextClock() {
@@ -106,8 +118,6 @@ export class StateTrackingBox extends TrackingBox {
 export function onTrackStoreAddUpdateChanges(
 	store: Store,
 	trackingBox: TrackingBox,
-	// hash key to identify associated state
-	documentRefToKeyStr: (dr: Document.Ref) => string,
 	callback: (
 		doc: Document.Ref,
 		state: DistributedDataType,
@@ -115,10 +125,9 @@ export function onTrackStoreAddUpdateChanges(
 	) => void
 ) {
 	const subscription = store.documentObservable.subscribe((s) => {
-		const documentRef = documentRefToKeyStr(s.ref);
 		if (s.action === "updated") {
 			// state box
-			const clock = trackingBox.append(documentRef, s.ref, s.state);
+			const clock = trackingBox.append(s.ref, s.state);
 
 			// fires callback after action
 			callback(s.ref, s.state, clock);
