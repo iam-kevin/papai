@@ -7,6 +7,7 @@ import { CollectionNode, DocumentNode, GetCollections, Store } from "./core";
 export * from "./methods";
 export * from "./observable";
 export * from "./types";
+export * from "./query";
 export { Store };
 
 /**

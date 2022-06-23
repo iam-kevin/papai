@@ -71,7 +71,7 @@ function queryFromWhere<T extends Document.Data>(
 	);
 }
 
-export async function queryCollection<T extends Document.Data>(
+export async function query<T extends Document.Data>(
 	collection: CollectionNode<T>,
 	query: Query<T> = {}
 ) {
