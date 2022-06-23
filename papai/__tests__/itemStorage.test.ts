@@ -68,18 +68,16 @@ const store = getStore(
 	)
 );
 
-const statebox = new StateTrackingBox(new HybridLogicalClock(nanoid(34)));
+const statebox = new StateTrackingBox(
+	new HybridLogicalClock(nanoid(34)),
+	(d) => `${d.collectionId}/${d.documentId}`
+);
 
 // Document
-onTrackStoreAddUpdateChanges(
-	store,
-	statebox,
-	(d) => `${d.collectionId}/${d.documentId}`,
-	(ref, state) => {
-		// ...
-		console.log(state);
-	}
-);
+onTrackStoreAddUpdateChanges(store, statebox, (ref, state) => {
+	// ...
+	console.log(state);
+});
 
 const dummy = collection(store, "dummy$");
 const dummy2 = collection(store, "dummy$2");
