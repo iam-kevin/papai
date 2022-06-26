@@ -76,7 +76,8 @@ export function onUpdateCollectionDocument<D extends Document.Data>(
 ) {
 	return collection.documentObservable.subscribe((d) => {
 		if (d.action === "updated") {
-			if (_isEqual(d.ref, collection.ref)) cb(d.state);
+			if (d.ref.collectionId === collection.ref.collectionId) cb(d.state);
 		}
+		// ...
 	});
 }
