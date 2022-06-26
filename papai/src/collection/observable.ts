@@ -69,3 +69,14 @@ export function onCollectionSnapshot<D extends Document.Data>(
 		}
 	});
 }
+
+export function onUpdateCollectionDocument<D extends Document.Data>(
+	collection: CollectionNode<D>,
+	cb: (doc: D) => void
+) {
+	return collection.documentObservable.subscribe((d) => {
+		if (d.action === "updated") {
+			if (_isEqual(d.ref, collection.ref)) cb(d.state);
+		}
+	});
+}
