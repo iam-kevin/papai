@@ -21,7 +21,7 @@ class TrackingBox {
 		docRef: Document.Ref,
 		state: DistributedDataType,
 		clock?: HybridLogicalClock
-	): HybridLogicalClock {
+	): HybridLogicalClock | null {
 		throw new Error("Not Implemented");
 	}
 
@@ -42,7 +42,8 @@ export class StateTrackingBox extends TrackingBox {
 	private _dr2str;
 	constructor(
 		initialClock: HybridLogicalClock,
-		docRefToKey: (dr: Document.Ref) => string
+		docRefToKey: (dr: Document.Ref) => string = (d) =>
+			`${d.collectionId}/${d.documentId}`
 	) {
 		super();
 		this._hlc = initialClock;
@@ -78,7 +79,14 @@ export class StateTrackingBox extends TrackingBox {
 		const c_ = clock ?? this.nextClock();
 
 		// add new state
-		set.add(new ClockedState(state, c_));
+		const val = new ClockedState(state, c_);
+		if (set.has(val)) {
+			return null;
+		}
+
+		// update
+		set.add(val);
+		this._sset.set(docRefKey, set);
 
 		// pass clock associated
 		return c_;
@@ -112,13 +120,13 @@ export class StateTrackingBox extends TrackingBox {
 }
 
 /**
- * Consolidation done by using `distributed/state-based` logic
+ * Subscription for new store changes
  * @param store
  */
-export function onTrackStoreAddUpdateChanges(
+export function onTrackNewStoreChanges(
 	store: Store,
 	trackingBox: TrackingBox,
-	callback: (
+	callback?: (
 		doc: Document.Ref,
 		state: DistributedDataType,
 		clock: HybridLogicalClock
@@ -129,13 +137,21 @@ export function onTrackStoreAddUpdateChanges(
 			// state box
 			const clock = trackingBox.append(s.ref, s.state);
 
-			// fires callback after action
-			callback(s.ref, s.state, clock);
+			if (clock !== null && callback !== undefined) {
+				// fires call back when received something new
+				callback(s.ref, s.state, clock);
+			}
 		}
 	});
 
 	return subscription;
 }
+
+/**
+ * @deprecated use `onTrackNewStoreChanges`
+ * Subscription for new store changes
+ */
+export const onTrackStoreAddUpdateChanges = onTrackNewStoreChanges;
 
 export async function updateChangesToStore(
 	store: Store,
