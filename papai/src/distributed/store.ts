@@ -121,6 +121,9 @@ export class StateTrackingBox extends TrackingBox {
 
 /**
  * Subscription for new store changes
+ *
+ * TODO: Think of a way to also, not fire cb from old changes
+ * (e.g. if new state has older clock)
  * @param store
  */
 export function onTrackNewStoreChanges(
